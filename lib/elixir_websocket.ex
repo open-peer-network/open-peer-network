@@ -1,18 +1,34 @@
 defmodule ElixirWebsocket do
-  @moduledoc """
-  Documentation for ElixirWebsocket.
-  """
+  use Application
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    children = [
+      Plug.Cowboy.child_spec(
+        scheme: :http,
+        plug: ElixirWebsocket.Router,
+        options: [
+          dispatch: dispatch(),
+          port: 4000
+        ]
+      ),
+      Registry.child_spec(
+        keys: :duplicate,
+        name: Registry.ElixirWebsocket
+      )
+    ]
 
-  ## Examples
+    opts = [strategy: :one_for_one, name: ElixirWebsocket.Application]
+    Supervisor.start_link(children, opts)
+  end
 
-      iex> ElixirWebsocket.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  defp dispatch do
+    [
+      {:_,
+        [
+          {"/ws/[...]", ElixirWebsocket.SocketHandler, []},
+          {:_, Plug.Cowboy.Handler, {ElixirWebsocket.Router, []}}
+        ]
+      }
+    ]
   end
 end
