@@ -11,7 +11,14 @@
     <main id="main"></main>
     <br>
     <form>
-      <input id="message" type="text">
+      <label for="subject">Subject</label>
+      <input id="subject" type="text" value="Bob" />
+      <br>
+      <label for="predicate">Predicate</label>
+      <input id="predicate" type="text" value="is" />
+      <br>
+      <label for="object">Object</label>
+      <input id="object" type="text" value="user" />
       <br>
       <br>
       <input type="submit" value="send" id="button">
