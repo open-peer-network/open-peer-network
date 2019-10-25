@@ -23,7 +23,7 @@
                 document.getElementById("object").value,
             ];
 
-            this.socket.send(JSON.stringify({ data: { spo: triple } }))
+            this.socket.send(JSON.stringify({ data: triple }))
         }
     }
 
