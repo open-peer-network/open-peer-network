@@ -14,7 +14,8 @@ defmodule ElixirWebsocket do
       Registry.child_spec(
         keys: :duplicate,
         name: Registry.ElixirWebsocket
-      )
+      ),
+      ElixirWebsocket.Graph,
     ]
 
     opts = [strategy: :one_for_one, name: ElixirWebsocket.Application]
