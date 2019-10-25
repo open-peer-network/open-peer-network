@@ -11,10 +11,13 @@
     <main id="main"></main>
     <br>
     <form>
-      <input id="message" type="text">
-      <br>
-      <br>
-      <input type="submit" value="send" id="button">
+      <label for="subject">Subject</label>
+      <input id="subject" name="subject" style="display: block" type="text">
+      <label for="predicate">Predicate</label>
+      <input id="predicate" name="predicate" style="display: block" type="text">
+      <label for="object">Object</label>
+      <input id="object" name="object" style="display: block" type="text">
+      <input type="submit" style="display: block" value="send" id="button">
     </form>
   </body>
 </html>

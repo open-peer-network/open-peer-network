@@ -15,19 +15,20 @@ defmodule ElixirWebsocket.SocketHandler do
   end
 
   def websocket_handle({:text, json}, state) do
-    payload = Jason.decode!(json)
-    message = payload["data"]["message"]
+    %{ "data" => %{ "spo" => triple } } = Jason.decode!(json)
+    IO.puts "data: #{inspect triple}"
+    tripleString = Jason.encode!(triple)
 
     Registry.ElixirWebsocket
     |> Registry.dispatch(state.registry_key, fn(entries) ->
       for {pid, _} <- entries do
         if pid != self() do
-          Process.send(pid, message, [])
+          Process.send(pid, tripleString, [])
         end
       end
     end)
 
-    {:reply, {:text, message}, state}
+    {:reply, {:text, tripleString}, state}
   end
 
   def websocket_info(info, state) do

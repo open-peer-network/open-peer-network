@@ -17,15 +17,13 @@
 
         submit(event) {
             event.preventDefault()
-            const input = document.getElementById("message")
-            const message = input.value
-            input.value = ""
+            const triple = [
+                document.getElementById("subject").value,
+                document.getElementById("predicate").value,
+                document.getElementById("object").value,
+            ];
 
-            this.socket.send(
-                JSON.stringify({
-                    data: { message: message },
-                })
-            )
+            this.socket.send(JSON.stringify({ data: { spo: triple } }))
         }
     }
 
