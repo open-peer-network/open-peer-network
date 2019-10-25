@@ -16,8 +16,7 @@ defmodule ElixirWebsocket.SocketHandler do
 
   def websocket_handle({:text, json}, state) do
     %{ "data" => triple } = Jason.decode!(json)
-    IO.puts "data: #{inspect triple}"
-    triple_string = Jason.encode!(triple)
+    triple_string = Jason.encode! triple
 
     Registry.ElixirWebsocket
     |> Registry.dispatch(state.registry_key, fn(entries) ->

@@ -11,12 +11,18 @@
     <main id="main"></main>
     <br>
     <form>
-      <label for="subject">Subject</label>
-      <input id="subject" name="subject" style="display: block" type="text">
-      <label for="predicate">Predicate</label>
-      <input id="predicate" name="predicate" style="display: block" type="text">
-      <label for="object">Object</label>
-      <input id="object" name="object" style="display: block" type="text">
+      <div style="display: inline-block">
+        <label for="subject">Subject</label>
+        <input id="subject" name="subject" style="display: block" type="text">
+      </div>
+      <div style="display: inline-block">
+        <label for="predicate">Predicate</label>
+        <input id="predicate" name="predicate" style="display: block" type="text">
+      </div>
+      <div style="display: inline-block">
+        <label for="object">Object</label>
+        <input id="object" name="object" style="display: block" type="text">
+      </div>
       <input type="submit" style="display: block" value="send" id="button">
     </form>
   </body>

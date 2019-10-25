@@ -6,10 +6,7 @@ defmodule ElixirWebsocket do
       Plug.Cowboy.child_spec(
         scheme: :http,
         plug: ElixirWebsocket.Router,
-        options: [
-          dispatch: dispatch(),
-          port: 4000
-        ]
+        options: [dispatch: dispatch(), port: 4000]
       ),
       Registry.child_spec(
         keys: :duplicate,
@@ -17,9 +14,10 @@ defmodule ElixirWebsocket do
       ),
       ElixirWebsocket.Graph,
     ]
-
-    opts = [strategy: :one_for_one, name: ElixirWebsocket.Application]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, [
+      strategy: :one_for_one,
+      name: ElixirWebsocket.Application,
+    ])
   end
 
   defp dispatch do
@@ -27,7 +25,7 @@ defmodule ElixirWebsocket do
       {:_,
         [
           {"/ws/[...]", ElixirWebsocket.SocketHandler, []},
-          {:_, Plug.Cowboy.Handler, {ElixirWebsocket.Router, []}}
+          {:_, Plug.Cowboy.Handler, {ElixirWebsocket.Router, []}},
         ]
       }
     ]
