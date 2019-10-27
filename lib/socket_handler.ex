@@ -1,9 +1,11 @@
 defmodule ElixirWebsocket.SocketHandler do
   @behaviour :cowboy_websocket
+  alias ElixirWebsocket.Database
+  require Logger
 
   def init(request, _state) do
+    Database.start_link(0)
     state = %{registry_key: request.path}
-
     {:cowboy_websocket, request, state}
   end
 
@@ -14,20 +16,21 @@ defmodule ElixirWebsocket.SocketHandler do
     {:ok, state}
   end
 
-  def websocket_handle({:text, json}, state) do
-    %{ "data" => triple } = Jason.decode!(json)
-    triple_string = Jason.encode! triple
+  def websocket_handle({:text, payload}, state) do
+    Logger.info "websocket_handle #{payload}"
 
-    Registry.ElixirWebsocket
-    |> Registry.dispatch(state.registry_key, fn(entries) ->
-      for {pid, _} <- entries do
-        if pid != self() do
-          Process.send(pid, triple_string, [])
-        end
-      end
-    end)
+    case Jason.decode(payload) do
+      {:ok, [s, p, o]} ->
+        Database.write([s, p, o])
+        {:reply, {:text, payload}, state}
 
-    {:reply, {:text, triple_string}, state}
+      {:ok, [s, p, o, l]} ->
+        Database.write([s, p, o, l])
+        {:reply, {:text, payload}, state}
+
+      {_, _} ->
+        {:reply, {:text, Jason.encode!(%{ status: "invalid data" })}, state}
+    end
   end
 
   def websocket_info(info, state) do

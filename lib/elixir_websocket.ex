@@ -3,16 +3,25 @@ defmodule ElixirWebsocket do
 
   def start(_type, _args) do
     children = [
-      Plug.Cowboy.child_spec(
+      {
+        Plug.Cowboy,
         scheme: :http,
         plug: ElixirWebsocket.Router,
         options: [dispatch: dispatch(), port: 4000]
-      ),
-      Registry.child_spec(
-        keys: :duplicate,
+      },
+      {
+        Registry,
+        keys: :unique,
         name: Registry.ElixirWebsocket
-      ),
-      ElixirWebsocket.Graph,
+      },
+      {
+        ElixirWebsocket.Caylir,
+        [:caylir]
+      },
+      {
+        ElixirWebsocket.Database,
+        [:database]
+      },
     ]
     Supervisor.start_link(children, [
       strategy: :one_for_one,
