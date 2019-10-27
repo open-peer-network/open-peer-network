@@ -4,6 +4,8 @@ defmodule ElixirWebsocket.Database do
   @proc_name :database
   require Logger
 
+  # @query_one File.read!("lib/queries/get_one.js")
+
   defp via(id) do
     {:via, Registry, {Registry.ElixirWebsocket, id}}
   end
