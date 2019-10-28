@@ -19,17 +19,21 @@ defmodule ElixirWebsocket.SocketHandler do
   def websocket_handle({:text, payload}, state) do
     Logger.info "websocket_handle #{payload}"
 
-    case Jason.decode(payload) do
-      {:ok, [s, p, o]} ->
-        Database.write([s, p, o])
-        {:reply, {:text, payload}, state}
+    if payload == "__ping__" do
+      {:reply, {:text, "__pong__"}, state}
+    else
+      case Jason.decode(payload) do
+        {:ok, [s, p, o]} ->
+          Database.write([s, p, o])
+          {:reply, {:text, payload}, state}
 
-      {:ok, [s, p, o, l]} ->
-        Database.write([s, p, o, l])
-        {:reply, {:text, payload}, state}
+        {:ok, [s, p, o, l]} ->
+          Database.write([s, p, o, l])
+          {:reply, {:text, payload}, state}
 
-      {_, _} ->
-        {:reply, {:text, Jason.encode!(%{ status: "invalid data" })}, state}
+        {_, _} ->
+          {:reply, {:text, Jason.encode!(%{ status: "invalid data" })}, state}
+      end
     end
   end
 

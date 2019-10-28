@@ -26,14 +26,40 @@
     </form>
     <script>
       {
-        const socket = new WebSocket('ws://localhost:4000/ws/chat')
+        let socket = new WebSocket('ws://localhost:4000/ws/chat')
+        const queue = []
+
+        const drain = () => {
+          while (queue.length > 0) {
+            socket.send(queue.shift())
+          }
+        }
+
+        const connect = () => {
+          socket = new WebSocket('ws://localhost:4000/ws/chat')
+          socket.onopen = drain
+          setupSocket()
+        }
+
+        setInterval(() => {
+          queue.push('__ping__')
+          if (socket.readyState !== socket.OPEN) {
+            connect()
+          } else {
+            drain()
+          }
+        }, 15000)
 
         const setupSocket = () => {
           socket.addEventListener('message', (event) => {
-            const pTag = document.createElement('p')
-            pTag.innerHTML = event.data
+            if (event.data === '__pong__') {
+              console.log(event.data)
+            } else {
+              const pTag = document.createElement('p')
+              pTag.innerHTML = event.data
 
-            document.getElementById('main').append(pTag)
+              document.getElementById('main').append(pTag)
+            }
           })
 
           socket.addEventListener('close', setupSocket)
@@ -41,17 +67,19 @@
 
         const submit = (event) => {
           event.preventDefault()
-          socket.send(JSON.stringify([
+          queue.push(JSON.stringify([
             document.getElementById('subject').value,
             document.getElementById('predicate').value,
             document.getElementById('object').value,
           ]))
+          if (socket.readyState !== socket.OPEN) {
+            connect()
+          } else {
+            drain()
+          }
         }
 
-        document.getElementById('button').addEventListener(
-          'click',
-          (event) => submit(event),
-        )
+        document.getElementById('button').addEventListener('click', (event) => submit(event))
         setupSocket()
       }
     </script>
