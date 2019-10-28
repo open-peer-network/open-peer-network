@@ -67,11 +67,11 @@
 
         const submit = (event) => {
           event.preventDefault()
-          queue.push(JSON.stringify([
+          queue.push(JSON.stringify([ "set", [
             document.getElementById('subject').value,
             document.getElementById('predicate').value,
             document.getElementById('object').value,
-          ]))
+          ]]))
           if (socket.readyState !== socket.OPEN) {
             connect()
           } else {
