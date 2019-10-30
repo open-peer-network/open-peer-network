@@ -1,42 +1,9 @@
 defmodule ElixirWebsocket do
-  use Application
+  @moduledoc """
+  ElixirWebsocket keeps the contexts that define your domain
+  and business logic.
 
-  def start(_type, _args) do
-    children = [
-      {
-        Plug.Cowboy,
-        scheme: :http,
-        plug: ElixirWebsocket.Router,
-        options: [dispatch: dispatch(), port: 4000]
-      },
-      {
-        Registry,
-        keys: :unique,
-        name: Registry.ElixirWebsocket
-      },
-      {
-        ElixirWebsocket.Caylir,
-        [:caylir]
-      },
-      {
-        ElixirWebsocket.Database,
-        [:database]
-      },
-    ]
-    Supervisor.start_link(children, [
-      strategy: :one_for_one,
-      name: ElixirWebsocket.Application,
-    ])
-  end
-
-  defp dispatch do
-    [
-      {:_,
-        [
-          {"/ws/[...]", ElixirWebsocket.SocketHandler, []},
-          {:_, Plug.Cowboy.Handler, {ElixirWebsocket.Router, []}},
-        ]
-      }
-    ]
-  end
+  Contexts are also responsible for managing your data, regardless
+  if it comes from the database, an external API or others.
+  """
 end

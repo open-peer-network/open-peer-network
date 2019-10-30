@@ -5,27 +5,38 @@ defmodule ElixirWebsocket.MixProject do
     [
       app: :elixir_websocket,
       version: "0.1.0",
-      elixir: "~> 1.7",
+      elixir: "~> 1.5",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
+  # Configuration for the OTP application.
+  #
+  # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {ElixirWebsocket, []},
-      extra_applications: [:logger]
+      mod: {ElixirWebsocket.Application, []},
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
+  # Specifies your project dependencies.
+  #
+  # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:cowboy, "~> 2.4"},
-      {:plug, "~> 1.7"},
+      {:phoenix, "~> 1.4.10"},
+      {:phoenix_pubsub, "~> 1.1"},
+      {:gettext, "~> 0.11"},
+      {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:jason, "~> 1.1"},
       {:caylir, "~> 0.11"},
     ]
   end
