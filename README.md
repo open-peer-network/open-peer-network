@@ -17,7 +17,7 @@
 4) Run `cayley init`
 
 
-### Setup and Launch Phoenix server
+### Setup and Launch Phoenix Server
 
 Assuming you have both Elixir and Mix properly installed...
 
@@ -25,7 +25,7 @@ Assuming you have both Elixir and Mix properly installed...
 2) Run `iex -S mix phx.server` to start Elixir
 
 
-## Frontend
+### Setup and Launch React Frontend
 
 The project includes a React-based frontend.
 
