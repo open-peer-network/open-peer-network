@@ -17,7 +17,6 @@ defmodule ElixirWebsocket.Application do
       strategy: :one_for_one,
       name: ElixirWebsocket.Supervisor,
     ])
-    ElixirWebsocket.Database.start_link(0)
   end
 
   # Tell Phoenix to update the endpoint configuration

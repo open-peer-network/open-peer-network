@@ -1,6 +1,11 @@
 defmodule ElixirWebsocketWeb.LobbyChannel do
   use Phoenix.Channel
-  # alias ElixirWebsocket.Database
+  alias ElixirWebsocket.Database
+
+  def init(state) do
+    ElixirWebsocket.Database.start_link(0)
+    {:ok, state}
+  end
 
   def join(topic, _message, socket) do
     case topic do
@@ -14,9 +19,7 @@ defmodule ElixirWebsocketWeb.LobbyChannel do
   end
 
   def handle_in("topic:graph:read", resource_desc, socket) do
-    # record = Database.read(record_id)
-    IO.puts Jason.encode!(resource_desc)
-
+    Database.read(resource_desc)
     {:noreply, socket}
   end
 

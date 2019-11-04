@@ -19,7 +19,8 @@ defmodule ElixirWebsocket.Database do
     GenServer.start_link(__MODULE__, [@proc_name], name: via(@proc_name))
   end
 
-  def read(_record_id) do
+  def read(resource_desc) do
+    IO.puts Jason.encode!(resource_desc)
   end
 
   def run(action, payload) do
