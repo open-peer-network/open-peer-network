@@ -1,0 +1,12 @@
+store:
+  backend: bolt
+  address: "./cayley.db"
+  read_only: false
+  options:
+    nosync: false
+query:
+  timeout: 30s
+load:
+  ignore_duplicates: false
+  ignore_missing: false
+  batch: 1000

@@ -6,17 +6,20 @@ defmodule ElixirWebsocket.Database do
   @proc_name :database
   # @query_one File.read!("lib/queries/get_one.js")
 
-  defp via(id) do
-    {:via, Registry, {Registry.ElixirWebsocket, id}}
-  end
+  @impl true
+  def init(state), do: {:ok, state}
+
+  defp via(id), do: {:via, Registry, {Registry.ElixirWebsocket, id}}
+
+  defp repackage([s, p, o]), do: %{ subject: s, predicate: p, object: o }
+
+  defp repackage([s, p, o, l]), do: %{ subject: s, predicate: p, object: o, label: l }
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [@proc_name], name: via(@proc_name))
   end
 
-  @impl true
-  def init(state) do
-    {:ok, state}
+  def read(_record_id) do
   end
 
   def run(action, payload) do
@@ -40,14 +43,6 @@ defmodule ElixirWebsocket.Database do
     Logger.info inspect(message)
 
     {:noreply, [payload | state]}
-  end
-
-  defp repackage([s, p, o]) do
-    %{ subject: s, predicate: p, object: o }
-  end
-
-  defp repackage([s, p, o, l]) do
-    %{ subject: s, predicate: p, object: o, label: l }
   end
 
   defp commit(action, data) do
