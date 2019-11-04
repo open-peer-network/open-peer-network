@@ -10,9 +10,9 @@
 ### Setup and Launch Cayley Database
 
 1) [Install the Cayley database](https://github.com/cayleygraph/cayley/blob/master/docs/installation.md).
-  * You may have to [build from source](https://github.com/cayleygraph/cayley/blob/master/docs/contributing.md) as I did.
+   * You may have to [build from source](https://github.com/cayleygraph/cayley/blob/master/docs/contributing.md) as I did.
 2) Make sure `cayley` is available from your path. You can use `which cayley` to check.
-  * If it's not, move they cayley folder to your home directory and symlink to it from `/usr/local/bin`.
+   * If it's not, move they cayley folder to your home directory and symlink to it from `/usr/local/bin`.
 3) Back in the current project directory, copy `cayley.yml.example` -> `cayley.yml`
 4) Run `cayley init`
 
