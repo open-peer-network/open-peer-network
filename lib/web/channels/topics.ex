@@ -18,8 +18,13 @@ defmodule ElixirWebsocketWeb.LobbyChannel do
     end
   end
 
-  def handle_in("topic:graph:read", resource_desc, socket) do
-    Database.read(resource_desc)
+  def handle_in(message, resource_desc, socket) do
+    case message do
+      "query" ->
+        Database.read(resource_desc)
+      _ ->
+        IO.puts "no match for message: '#{message}'"
+    end
     {:noreply, socket}
   end
 
