@@ -11,6 +11,10 @@ config :elixir_websocket, ElixirWebsocketWeb.Endpoint,
   render_errors: [view: ElixirWebsocketWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: ElixirWebsocket.PubSub, adapter: Phoenix.PubSub.PG2]
 
+config :elixir_websocket, ElixirWebsocket.Caylir,
+  host: "localhost",
+  port: 64210
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

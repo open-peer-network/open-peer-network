@@ -11,6 +11,7 @@ defmodule ElixirWebsocket.Application do
       },
       ElixirWebsocket.Database,
       ElixirWebsocketWeb.Endpoint,
+      ElixirWebsocket.Caylir,
     ]
 
     Supervisor.start_link(children, [

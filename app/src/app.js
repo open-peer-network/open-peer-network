@@ -8,8 +8,10 @@ const [
 ] = Channels("counter", "graph");
 
 const submitRead = () => {
-  channelGraph.push("query", { s: "uuid:1", p: ["firstName", "lastName"] })
-}
+  channelGraph.push("query", {
+    s: "cf9b3364304cd98118c7deb4f3efe70ff713a70ac47a4e4120864efee19f6e1a",
+  });
+};
 
 const App = () => {
   const [count, setCount] = React.useState(0);

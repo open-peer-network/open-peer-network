@@ -21,7 +21,7 @@ defmodule ElixirWebsocketWeb.LobbyChannel do
   def handle_in(message, resource_desc, socket) do
     case message do
       "query" ->
-        Database.read(resource_desc)
+        Database.query(resource_desc)
       _ ->
         IO.puts "no match for message: '#{message}'"
     end
