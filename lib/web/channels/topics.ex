@@ -2,29 +2,25 @@ defmodule ElixirWebsocketWeb.LobbyChannel do
   use Phoenix.Channel
   alias ElixirWebsocket.Database
 
-  def init(state) do
-    ElixirWebsocket.Database.start_link(0)
-    {:ok, state}
-  end
+  def init(state), do: {:ok, state}
 
   def join(topic, _message, socket) do
     case topic do
       "topic:counter" ->
-        socket = assign(socket, :count, 1)
         send(self(), :after_join)
-        {:ok, socket}
+        {:ok, assign(socket, :count, 1)}
       _ ->
-        {:ok, socket}
+        {:ok, assign(socket, :count, 1)}
     end
   end
 
-  def handle_in(message, resource_desc, socket) do
-    case message do
-      "query" ->
-        Database.query(resource_desc)
-      _ ->
-        IO.puts "no match for message: '#{message}'"
-    end
+  def handle_in("query", payload, socket) do
+    Database.query(payload, socket)
+    {:noreply, socket}
+  end
+
+  def handle_in(message, _payload, socket) do
+    IO.puts "no match for message: '#{message}'"
     {:noreply, socket}
   end
 

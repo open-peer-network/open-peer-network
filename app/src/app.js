@@ -1,5 +1,6 @@
-import React from 'react';
+import React from "react";
 import { Channels } from "./channels";
+// import uuid from "uuid/v1";
 import "./index.css";
 
 const [
@@ -9,7 +10,8 @@ const [
 
 const submitRead = () => {
   channelGraph.push("query", {
-    s: "cf9b3364304cd98118c7deb4f3efe70ff713a70ac47a4e4120864efee19f6e1a",
+    s: "06ab7fe0-0039-11ea-9024-45e6b6f0fb4c",
+    p: ["firstName", "lastName"],
   });
 };
 
@@ -20,6 +22,7 @@ const App = () => {
 
   React.useEffect(() => {
     channelCounter.on("count", ({ value }) => setCount(value))
+    channelGraph.on("query_result", (data) => console.log(data))
   }, []);
 
   return (

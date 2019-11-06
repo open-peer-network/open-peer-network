@@ -1,19 +1,16 @@
 defmodule ElixirWebsocketWeb.Queries do
 
-  def run(%{ "s" => id}) do
+  def get_one(%{ "s" => id, "p" => predicates }) do
     ~s"""
       var result = {};
       var user = g.V('#{id}');
+      var predicates = #{predicates};
 
-      user.outPredicates().map(function (d) {
-        result[d.id] = user.out(d.id).toValue();
+      predicates.map(function(predicate) {
+        result[predicate] = user.out(predicate).toValue();
       });
 
       g.emit(result);
     """
-  end
-
-  def run(_) do
-    {:error, "No query match"}
   end
 end

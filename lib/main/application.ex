@@ -4,12 +4,12 @@ defmodule ElixirWebsocket.Application do
 
   def start(_type, _args) do
     children = [
-      {
-        Registry,
-        keys: :unique,
-        name: Registry.ElixirWebsocket
-      },
-      ElixirWebsocket.Database,
+      # {
+      #   Registry,
+      #   keys: :unique,
+      #   name: Registry.ElixirWebsocket
+      # },
+      # ElixirWebsocket.Database,
       ElixirWebsocketWeb.Endpoint,
       ElixirWebsocket.Caylir,
     ]
