@@ -1,9 +1,8 @@
 defmodule ElixirWebsocketWeb.UserSocket do
   use Phoenix.Socket
-  alias ElixirWebsocketWeb.Util
 
   ## Channels
-  channel "topic:*", ElixirWebsocketWeb.LobbyChannel
+  channel "topic:*", ElixirWebsocketWeb.Topics
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -18,7 +17,7 @@ defmodule ElixirWebsocketWeb.UserSocket do
   # performing token verification on connect.
   def connect(params, socket, _connect_info) do
     IO.puts "connected!"
-    {:ok, assign(socket, :user_id, params["user_id"] || Util.uuid())}
+    {:ok, assign(socket, :user_id, params["user_id"] || UUID.uuid1)}
   end
 
   # Socket id's are topics that identify all sockets for a given user

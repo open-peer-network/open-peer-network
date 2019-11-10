@@ -1,4 +1,5 @@
 import { Socket } from "phoenix";
+import uuid from "uuid/v1";
 
 const _channels = {};
 const backend = process.env.REACT_APP_HOST_DOMAIN;
@@ -27,6 +28,12 @@ export const Channels = (...topics) => (
         channel.join()
         .receive("ok", (resp) => successHandler(topic, resp))
         .receive("error", (resp) => failureHandler(topic, resp))
+
+        channel.read = (payload, cb) => {
+            const requestId = `read:${uuid()}`;
+            channel.on(requestId, cb);
+            channel.push(requestId, payload);
+        };
 
         return channel;
     })

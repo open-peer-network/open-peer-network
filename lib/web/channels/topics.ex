@@ -1,36 +1,57 @@
-defmodule ElixirWebsocketWeb.LobbyChannel do
+defmodule ElixirWebsocketWeb.Topics do
   use Phoenix.Channel
   alias ElixirWebsocket.Database
 
+  @moduledoc """
+  In our architecture, each ID is a topic.
+
+      {
+        "user_id1": {
+          "firstName": "Rob"
+        }
+      }
+
+  Would be topic `user_id1`, with a message payload of
+  `{ "firstName": "Rob" }`
+  """
+
   def init(state), do: {:ok, state}
 
-  def join(topic, _message, socket) do
-    case topic do
-      "topic:counter" ->
-        send(self(), :after_join)
-        {:ok, assign(socket, :count, 1)}
+  def join(_topic, _msg, socket), do: {:ok, socket}
+
+  def handle_in("watch", %{"s" => subj, "p" => pred}, socket) do
+    Database.query(%{"s" => subj, "p" => pred}, fn data ->
+      push(socket, "value", data)
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_in("read:" <> id, payload, socket) do
+    Database.query(payload, fn data ->
+      push(socket, "read:#{id}", data)
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_in("login", payload, socket) do
+    case payload do
+      ["user1", "password"] ->
+        IO.puts("login success")
+        push(socket, "auth:success", %{data: "06ab7fe0-0039-11ea-9024-45e6b6f0fb4c"})
+        {:noreply, socket}
+
       _ ->
-        {:ok, assign(socket, :count, 1)}
+        IO.puts("login failed")
+        push(socket, "auth:failure", %{})
+        {:noreply, socket}
     end
   end
 
-  def handle_in("query", payload, socket) do
-    Database.query(payload, socket)
-    {:noreply, socket}
-  end
-
-  def handle_in(message, _payload, socket) do
-    IO.puts "no match for message: '#{message}'"
-    {:noreply, socket}
-  end
-
-  def handle_info(:after_join, socket) do
-    push(socket, "count", %{ value: socket.assigns.count })
-
-    Process.sleep(1_000)
-    socket = assign(socket, :count, socket.assigns.count + 1)
-    send(self(), :after_join)
-
+  def handle_in(action, payload, socket) do
+    IO.puts("not matched!!!!!!!!!!!!!! #{action}")
+    IO.inspect(payload)
     {:noreply, socket}
   end
 end

@@ -2,20 +2,22 @@ defmodule ElixirWebsocket.Database do
   use Phoenix.Endpoint, otp_app: :elixir_websocket
   alias ElixirWebsocket.Caylir
 
-  def query(%{ "s" => s, "p" => p }, socket) do
-    case Caylir.query query_one(s, p) do
+  def query(%{"s" => subj, "p" => pred}, callback) do
+    case Caylir.query(query_one(subj, pred)) do
       [data] ->
-        Phoenix.Channel.push(socket, "query_result", data)
-      _ ->
-        IO.puts "query failed miserably"
+        callback(%{subject: subj, data: data})
+
+      resp ->
+        IO.puts("query failed miserably")
+        IO.inspect(resp)
     end
   end
 
-  def query_one(subject, predicates) do
+  def query_one(subj, pred) do
     ~s"""
       var result = {};
-      var user = g.V(#{Jason.encode! subject});
-      var predicates = #{Jason.encode! predicates};
+      var user = g.V(#{Jason.encode!(subj)});
+      var predicates = #{Jason.encode!(pred)};
 
       predicates.map(function(predicate) {
         result[predicate] = user.out(predicate).toValue();

@@ -11,13 +11,13 @@ defmodule ElixirWebsocket.Application do
       # },
       # ElixirWebsocket.Database,
       ElixirWebsocketWeb.Endpoint,
-      ElixirWebsocket.Caylir,
+      ElixirWebsocket.Caylir
     ]
 
-    Supervisor.start_link(children, [
+    Supervisor.start_link(children,
       strategy: :one_for_one,
-      name: ElixirWebsocket.Supervisor,
-    ])
+      name: ElixirWebsocket.Supervisor
+    )
   end
 
   # Tell Phoenix to update the endpoint configuration
