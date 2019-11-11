@@ -9,7 +9,6 @@ defmodule ElixirWebsocket.Application do
       #   keys: :unique,
       #   name: Registry.ElixirWebsocket
       # },
-      # ElixirWebsocket.Database,
       ElixirWebsocketWeb.Endpoint,
       ElixirWebsocket.Caylir
     ]
