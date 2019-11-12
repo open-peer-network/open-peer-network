@@ -1,30 +1,33 @@
-import React from "react";
-import mainChan from "./channels/main";
+import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
+import graph from "./graph";
 
+graph.start();
+graph.on("firstName", (value) => console.log("first name:", value));
+graph.on("lastName", (value) => console.log("last name:", value));
 
-const submitWrite = (predicate, name) => mainChan.push("write", {
-	s: "06ab7fe0-0039-11ea-9024-45e6b6f0fb4c",
-	p: predicate,
-	o: name,
-});
+const submitWrite = (predicate, value) => graph.write(predicate, value);
 
 const App = () => {
-	const [fname, setFirstName] = React.useState("");
-	const [lname, setLastName] = React.useState("");
+	const [fname, setFirstName] = useState("");
+	const [lname, setLastName] = useState("");
 
-	const fnameRef = React.useRef(null);
-	const lnameRef = React.useRef(null);
+	const fnameRef = useRef(null);
+	const lnameRef = useRef(null);
 
 	fnameRef.current = fname;
 	lnameRef.current = lname;
 
-	const submit = React.useCallback(() => {
+	const submit = useCallback(() => {
 		submitWrite("firstName", fnameRef.current);
 		submitWrite("lastName", lnameRef.current);
 	}, []);
-	const typingFirstName = React.useCallback(({ target }) => setFirstName(target.value), []);
-	const typingLastName = React.useCallback(({ target }) => setLastName(target.value), []);
+	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
+	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
+	const doRead = useCallback(() => {
+		graph.read("firstName", ({ data }) => setFirstName(data.firstName));
+		graph.read("lastName", ({ data }) => setLastName(data.lastName));
+	}, []);
 
 	return (
 		<div className="App">
@@ -37,6 +40,7 @@ const App = () => {
 				<input name="last_name" onChange={typingLastName} value={lnameRef.current} />
 			</div>
 			<button onClick={submit}>Write</button>
+			<button onClick={doRead}>Read</button>
 		</div>
 	);
 }

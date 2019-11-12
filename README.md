@@ -30,7 +30,9 @@ Assuming you have both Elixir and Mix properly installed...
 The project includes a React-based frontend.
 
 1) `cd app/`
-2) Copy app/.env.example -> app/.env
-3) Run `npm install` or `yarn install` if you have yarn (yarn is better)
-4) Run `npm start`
-
+1) Copy `app/.env.example` -> `app/.env`
+1) Move into the `app/` directory: `cd app/`
+1) Run `npm install` or `yarn install` if you have yarn (yarn is better)
+1) Get a new UUID: `node -e "console.log(require('uuid/v1')())"`
+1) Copy the response to your `app/.env` file to make this your test user UUID
+1) Run `npm start`

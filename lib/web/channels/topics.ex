@@ -44,21 +44,6 @@ defmodule ElixirWebsocketWeb.Topics do
     {:noreply, socket}
   end
 
-  def handle_in("login", payload, socket) do
-    case payload do
-      # hardcoded username, password, and uuid, just temporarily
-      ["user1", "password"] ->
-        IO.puts("login success")
-        push(socket, "auth:success", %{data: "06ab7fe0-0039-11ea-9024-45e6b6f0fb4c"})
-        {:noreply, socket}
-
-      _ ->
-        IO.puts("login failed")
-        push(socket, "auth:failure", %{})
-        {:noreply, socket}
-    end
-  end
-
   def handle_in(action, payload, socket) do
     IO.puts("No matching action for action: #{inspect(action)}, payload: #{inspect(payload)}")
     {:noreply, socket}
