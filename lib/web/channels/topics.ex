@@ -12,8 +12,8 @@ defmodule ElixirWebsocketWeb.Topics do
         }
       }
 
-  Would be topic `user_id1`, with a message payload of
-  `{ "firstName": "Rob" }`
+  Would be topic `user_id1:firstName`, with a message payload of
+  `{ "data": "Rob" }`
   """
 
   def init(state), do: {:ok, state}
@@ -28,7 +28,7 @@ defmodule ElixirWebsocketWeb.Topics do
         resp = Database.write(s, p, o)
         IO.puts("write: #{inspect(resp)}")
 
-        resp = Endpoint.broadcast!("trunk:#{s}:#{p}", "value", %{"data" => o})
+        resp = Endpoint.broadcast!("topic:#{s}:#{p}", "value", %{"data" => o})
         IO.puts("broadcast returned: #{inspect(resp)}")
 
         {:noreply, socket}

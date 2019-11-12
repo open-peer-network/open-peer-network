@@ -2,7 +2,7 @@ defmodule ElixirWebsocketWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel("trunk:*", ElixirWebsocketWeb.Topics)
+  channel("topic:*", ElixirWebsocketWeb.Topics)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

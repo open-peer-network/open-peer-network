@@ -3,7 +3,7 @@ defmodule ElixirWebsocket.Database do
   alias ElixirWebsocket.Caylir
 
   def query(%{"s" => subj, "p" => pred}) do
-    Caylir.query(~s"""
+    case Caylir.query(~s"""
       var result = {};
       var user = g.V(#{Jason.encode!(subj)});
       var predicates = #{Jason.encode!(pred)};
@@ -13,11 +13,10 @@ defmodule ElixirWebsocket.Database do
       });
 
       g.emit(result);
-    """)
-    |> (fn
-          [data] -> %{subject: subj, data: data}
-          resp -> IO.puts("query failed miserably: #{inspect(resp)}")
-        end).()
+    """) do
+      [data] -> %{subject: subj, data: data}
+      resp -> IO.puts("query failed miserably: #{inspect(resp)}")
+    end
   end
 
   def write(s, p, o) when is_binary(s) and is_binary(p) and is_binary(o) do

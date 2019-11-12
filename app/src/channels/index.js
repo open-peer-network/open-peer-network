@@ -20,7 +20,7 @@ export default (...topicsList) => {
 	['main']
 	.concat(topicsList)
 	.forEach((subtopic) => {
-		const topic = `trunk:${subtopic}`;
+		const topic = `topic:${subtopic}`;
 		if (_channels[topic]) return _channels[topic];
 
 		console.log(`New topic: ${topic}`);
@@ -37,7 +37,7 @@ export default (...topicsList) => {
 	});
 
 	if (!topicsList.length) {
-		return _channels['trunk:main'];
+		return _channels['topic:main'];
 	}
-	return topicsList.map((topic) => _channels[`trunk:${topic}`]);
+	return topicsList.map((topic) => _channels[`topic:${topic}`]);
 };
