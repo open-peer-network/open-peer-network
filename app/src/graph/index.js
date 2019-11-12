@@ -7,7 +7,7 @@ const backend = process.env.REACT_APP_HOST_DOMAIN;
 const uid = process.env.REACT_APP_TEST_UUID;
 
 const topicFromPredicate = (p) => (
-  (!p || p === 'none') ? 'topic:none' : `topic:${uid}:${p}`
+  (!p || p === "none") ? "topic:none" : `topic:${uid}:${p}`
 );
 
 class API {
@@ -18,7 +18,7 @@ class API {
 
 	constructor() {
     if (!uid) {
-      throw new Error('uuid not valid');
+      throw new Error("uuid not valid");
     }
     this.socket = new Socket(`${backend}/socket`, {});
 
@@ -37,7 +37,7 @@ class API {
     const channel = this.socket.channel(topicString, {});
     channel.join()
       .receive("ok", () => console.log(`success, joined topic '${topicString}'`))
-      .receive("error", () => console.log(`failed to join topic '${topicString}`));
+      .receive("error", () => console.log(`failed to join topic '${topicString}'`));
 
     this.channels[topicString] = channel;
   }
