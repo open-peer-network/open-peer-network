@@ -50,7 +50,6 @@ config :elixir_websocket, ElixirWebsocketWeb.Endpoint,
 #   live_reload: [
 #     patterns: [
 #       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-#       ~r"priv/gettext/.*(po)$",
 #       ~r"lib/elixir_websocket_web/{live,views}/.*(ex)$",
 #       ~r"lib/elixir_websocket_web/templates/.*(eex)$"
 #     ]
