@@ -15,8 +15,8 @@ const App = () => {
 	const fnameRef = useRef(null);
 	const lnameRef = useRef(null);
 
-	fnameRef.current = fname;
-	lnameRef.current = lname;
+	fnameRef.current = fname || "";
+	lnameRef.current = lname || "";
 
 	const submit = useCallback(() => {
 		submitWrite("firstName", fnameRef.current);
