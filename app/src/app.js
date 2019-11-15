@@ -1,32 +1,33 @@
 import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
-import graph from "./graph";
+import Node from "./graph";
 
-graph.start();
-graph.on("firstName", (value) => console.log("first name:", value));
-graph.on("lastName", (value) => console.log("last name:", value));
+const node = new Node();
+node.on(["first_name", "last_name"], (data) => {
+	console.log("value:", data);
+});
 
-const submitWrite = (predicate, value) => graph.write(predicate, value);
+const submitWrite = (predicate, value) => node.write(predicate, value);
 
 const App = () => {
 	const [fname, setFirstName] = useState("");
 	const [lname, setLastName] = useState("");
 
-	const fnameRef = useRef(null);
-	const lnameRef = useRef(null);
+	const fnameRef = useRef("");
+	const lnameRef = useRef("");
 
-	fnameRef.current = fname;
-	lnameRef.current = lname;
+	fnameRef.current = fname || "";
+	lnameRef.current = lname || "";
 
 	const submit = useCallback(() => {
-		submitWrite("firstName", fnameRef.current);
-		submitWrite("lastName", lnameRef.current);
+		submitWrite("first_name", fnameRef.current);
+		submitWrite("last_name", lnameRef.current);
 	}, []);
 	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
 	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
 	const doRead = useCallback(() => {
-		graph.read("firstName", ({ data }) => setFirstName(data.firstName));
-		graph.read("lastName", ({ data }) => setLastName(data.lastName));
+		node.read("first_name", ({ data }) => setFirstName(data.first_name));
+		node.read("last_name", ({ data }) => setLastName(data.last_name));
 	}, []);
 
 	return (

@@ -1,143 +1,127 @@
 import { Socket } from "phoenix";
-import uuid from "uuid/v1";
-import pick from "lodash.pick";
+import uuid from "uuid/v4";
+import merge from "lodash.merge";
+import values from "lodash.values";
 
 const { isArray } = Array;
 const backend = process.env.REACT_APP_HOST_DOMAIN;
-const uid = process.env.REACT_APP_TEST_UUID;
+const socket = new Socket(`${backend}/socket`, {});
+socket.connect();
 
-const topicFromPredicate = (p) => (
-  (!p || p === "none") ? "topic:none" : `topic:${uid}:${p}`
+const isNotStringOrStringArray = (thing) => (
+  typeof thing !== "string" && isArray(thing) && thing.some((p) => typeof p !== "string")
 );
 
-class API {
-  mainChannel = null;
-	channels = {};
+const makeTopic = (topicString) => {
+  if (!socket) {
+    throw new Error("socket not initialized, call graph.start() first");
+  }
+  console.log(`New topic: ${topicString}`);
+  const channel = socket.channel(topicString, {});
+  channel.join()
+    .receive("ok", () => console.log(`success, joined topic '${topicString}'`))
+    .receive("error", () => console.log(`failed to join topic '${topicString}'`));
+
+  return channel;
+}
+
+const topicForPredicate = (uid, p) => `topic:${uid}:${p}`;
+
+const noneChannel = makeTopic("topic:none");
+
+class Node {
 	socket = null;
-	listeners = {};
+	topics = {};
+  listeners = {};
+  uuid = null;
 
 	constructor() {
-    if (!uid) {
-      throw new Error("uuid not valid");
-    }
-    this.socket = new Socket(`${backend}/socket`, {});
-
-    const mainChan = topicFromPredicate();
-    this._newTopic(mainChan);
-    this.mainChannel = this.channels[mainChan];
-  }
-
-  start() {
-    this.socket.connect();
-    this.topics();
-  }
-
-  _newTopic(topicString) {
-    console.log(`New topic: ${topicString}`);
-    const channel = this.socket.channel(topicString, {});
-    channel.join()
-      .receive("ok", () => console.log(`success, joined topic '${topicString}'`))
-      .receive("error", () => console.log(`failed to join topic '${topicString}'`));
-
-    this.channels[topicString] = channel;
+    this.uuid = uuid();
   }
 
 	on(predicates, callback) {
-    if (typeof predicates !== "string" && !isArray(predicates)) {
-      throw new Error("graph.on() arg 1 must be either string or string[]");
+    if (isNotStringOrStringArray(predicates)) {
+      throw new Error("node.on() arg 1 type must be either String or Array<String>");
     }
     if (typeof callback !== "function") {
-      throw new Error("graph.on() callback must be a function");
+      throw new Error("node.on() arg 2 type must be Function");
     }
 
 		const preds = isArray(predicates) ? predicates : [predicates];
+    const topics = preds.map((pred) => this.useTopic(pred));
 
-    const channels = this.topics(...preds);
-
-    Object.values(channels).forEach((chan) => {
-      chan.on("value", callback);
+    topics.forEach((oneTopic) => {
+      oneTopic.on("value", callback);
     });
 
-    Object.assign(this.listeners, channels);
+    merge(this.listeners, topics);
   }
 
   off(predicates) {
-    if (!isArray(predicates)) {
-      return new Error("graph.off() takes only string[]");
+    if (isNotStringOrStringArray(predicates)) {
+      return new Error("node.off() arg 1 type must be either String or Array<String>");
     }
-    predicates.forEach((pred) => {
-      const topic = topicFromPredicate(pred);
+    [].concat(predicates).forEach((predicate) => {
+      const topic = topicForPredicate(this.uuid, predicate);
       this.listeners[topic].off("value");
       delete this.listeners[topic];
     });
   }
 
   clear() {
-    Object.values(this.listeners).forEach((chan) => {
+    values(this.listeners).forEach((chan) => {
       chan.off("value");
     });
     this.listeners = {};
   }
 
 	read(predicates, callback) {
+    if (isNotStringOrStringArray(predicates)) {
+      return new Error("node.read() arg 1 type must be either String or Array<String>");
+    }
     if (typeof callback !== "function") {
-      throw new Error("graph.on() callback must be a function");
+      throw new Error("node.read() arg 2 type must be Function");
     }
 
     const payload = {
-      s: uid,
+      s: this.uuid,
       p: [].concat(predicates),
     };
     const requestId = `read:${uuid()}`;
 
-		this.mainChannel.on(requestId, (resp) => {
+		noneChannel.on(requestId, (resp) => {
       callback(resp);
-      this.mainChannel.off(requestId);
+      noneChannel.off(requestId);
     });
-		this.mainChannel.push(requestId, payload);
+		noneChannel.push(requestId, payload);
   }
 
-  write(pred, obj) {
-    if (typeof pred !== "string" || typeof obj !== "string") {
-      throw new Error("graph.write() takes two strings");
+  write(predicate, object) {
+    if (typeof predicate !== "string" || typeof object !== "string") {
+      throw new Error("node.write() arg 1 and 2 must be of type String");
     }
-    this.topic(pred).push("write", {
-      s: uid,
-      p: pred,
-      o: obj,
+    this.useTopic(predicate).push("write", {
+      s: this.uuid,
+      p: predicate,
+      o: object,
     });
   }
 
-  topic(predicate) {
+  useTopic(predicate) {
     if (typeof predicate !== "string") {
-      throw new Error("graph.topic() takes only a string");
+      throw new Error("node.useTopic() arg 1 must be of type String");
     }
-    const topic = topicFromPredicate(predicate);
+    const topicString = topicForPredicate(this.uuid, predicate);
 
-    if (this.channels[topic]) {
-      return this.channels[topic];
+    if (this.topics[topicString]) {
+      return this.topics[topicString];
     }
-    return this.topics(predicate)[topic];
+
+    const newTopic = makeTopic(topicString);
+    this.topics[topicString] = newTopic;
+
+    return newTopic;
   }
+}
 
-	topics(...predicates) {
-    // Loop over provided topics, initialize any that are new.
-		predicates.forEach((predicate) => {
-      const topic = topicFromPredicate(predicate);
-
-      // If it exists then skip it
-      if (this.channels[topic]) return;
-
-      this._newTopic(topic);
-		});
-
-		if (predicates.length < 1) {
-			return this.mainChannel;
-    }
-    return pick(this.channels, predicates.map(topicFromPredicate));
-	};
-};
-
-const api = new API();
-
-export default api;
+export default Node;
