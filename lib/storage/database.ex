@@ -20,23 +20,28 @@ defmodule ElixirWebsocket.Database do
   end
 
   def write(s, p, o) when is_binary(s) and is_binary(p) and is_binary(o) do
-    existing_entry =
-      "g.emit(g.V(#{Jason.encode!(s)}).out(#{Jason.encode!(p)}).toValue())"
-      |> Caylir.query()
+    "g.emit(g.V(#{Jason.encode!(s)}).out(#{Jason.encode!(p)}).toValue())"
+    |> Caylir.query()
+    |> clear(s, p)
+    |> write_new(s, p, o)
+  end
 
-    if existing_entry do
-      status =
-        Caylir.delete(%{
-          "subject" => s,
-          "predicate" => p,
-          "object" => Enum.at(existing_entry, 0)
-        })
-
-      if status == :ok do
-        Caylir.write(%{"subject" => s, "predicate" => p, "object" => o})
-      end
+  defp clear(existing, s, p) do
+    if existing do
+      Caylir.delete(%{
+        "subject" => s,
+        "predicate" => p,
+        "object" => Enum.at(existing, 0)
+      })
     else
-      Caylir.write(%{"subject" => s, "predicate" => p, "object" => o})
+      :ok
+    end
+  end
+
+  defp write_new(status, s, p, o) do
+    case status do
+      :ok -> Caylir.write(%{"subject" => s, "predicate" => p, "object" => o})
+      _ -> IO.puts("Error: delete failed [subject, predicate]: [#{inspect(s)}, #{inspect(p)}]")
     end
   end
 end
