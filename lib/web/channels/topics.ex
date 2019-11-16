@@ -18,7 +18,7 @@ defmodule ElixirWebsocketWeb.Topics do
 
   def init(state), do: {:ok, state}
 
-  def join(_topic, _msg, socket) do
+  def join(_topics, _msg, socket) do
     {:ok, assign(socket, :topics, [])}
   end
 

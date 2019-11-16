@@ -1,5 +1,5 @@
 import { Socket } from "phoenix";
-import uuid from "uuid/v4";
+import getUUID from "uuid/v4";
 import merge from "lodash.merge";
 import values from "lodash.values";
 
@@ -25,18 +25,39 @@ const makeTopic = (topicString) => {
   return channel;
 }
 
+const read = (predicates, uuid, callback) => {
+  if (isNotStringOrStringArray(predicates)) {
+    return new Error("node.read() arg 1 type must be either String or Array<String>");
+  }
+  if (typeof callback !== "function") {
+    throw new Error("node.read() arg 2 type must be Function");
+  }
+
+  const payload = {
+    s: uuid,
+    p: [].concat(predicates),
+  };
+  const requestId = `read:${getUUID()}`;
+
+  noneChannel.on(requestId, (resp) => {
+    callback(resp);
+    noneChannel.off(requestId);
+  });
+  noneChannel.push(requestId, payload);
+};
+
 const topicForPredicate = (uid, p) => `topic:${uid}:${p}`;
 
 const noneChannel = makeTopic("topic:none");
 
-class Node {
+export class Node {
 	socket = null;
 	topics = {};
   listeners = {};
   uuid = null;
 
 	constructor() {
-    this.uuid = uuid();
+    this.uuid = getUUID();
   }
 
 	on(predicates, callback) {
@@ -75,27 +96,6 @@ class Node {
     this.listeners = {};
   }
 
-	read(predicates, callback) {
-    if (isNotStringOrStringArray(predicates)) {
-      return new Error("node.read() arg 1 type must be either String or Array<String>");
-    }
-    if (typeof callback !== "function") {
-      throw new Error("node.read() arg 2 type must be Function");
-    }
-
-    const payload = {
-      s: this.uuid,
-      p: [].concat(predicates),
-    };
-    const requestId = `read:${uuid()}`;
-
-		noneChannel.on(requestId, (resp) => {
-      callback(resp);
-      noneChannel.off(requestId);
-    });
-		noneChannel.push(requestId, payload);
-  }
-
   write(predicate, object) {
     if (typeof predicate !== "string" || typeof object !== "string") {
       throw new Error("node.write() arg 1 and 2 must be of type String");
@@ -124,4 +124,7 @@ class Node {
   }
 }
 
-export default Node;
+export class User {
+  constructor(name, password) {
+  }
+}
