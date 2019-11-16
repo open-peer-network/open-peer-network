@@ -45,7 +45,7 @@ defmodule ElixirWebsocketWeb.Topics do
   end
 
   def handle_in(action, payload, socket) do
-    IO.puts("No matching action for action: #{inspect(action)}, payload: #{inspect(payload)}")
+    IO.puts("No match for action: #{inspect(action)}, payload: #{inspect(payload)}")
     {:noreply, socket}
   end
 end
