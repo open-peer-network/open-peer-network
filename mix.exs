@@ -39,7 +39,8 @@ defmodule ElixirWebsocket.MixProject do
       {:caylir, "~> 0.11"},
       {:elixir_uuid, "~> 1.2"},
       {:earmark, "~> 1.2", only: :dev},
-      {:ex_doc, "~> 0.19", only: :dev}
+      {:ex_doc, "~> 0.19", only: :dev},
+      {:benchee, "~> 1.0", only: :dev},
     ]
   end
 end
