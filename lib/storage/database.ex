@@ -6,17 +6,17 @@ defmodule ElixirWebsocket.Database do
 
   def query(%{"s" => subj, "p" => pred}) do
     case Caylir.query(~s"""
-      var result = {};
-      var user = g.V(#{Jason.encode!(subj)});
-      var predicates = #{Jason.encode!(pred)};
+           var result = {};
+           var user = g.V(#{Jason.encode!(subj)});
+           var predicates = #{Jason.encode!(pred)};
 
-      predicates.map(function(predicate) {
-        result[predicate] = user.out(predicate).toValue();
-      });
+           predicates.map(function(predicate) {
+             result[predicate] = user.out(predicate).toValue();
+           });
 
-      g.emit(result);
-    """) do
-      [data] -> %{subject: subj, data: data}
+           g.emit(result);
+         """) do
+      [data] -> %{"subject" => subj, "data" => data}
       resp -> IO.puts("query failed miserably: #{inspect(resp)}")
     end
   end

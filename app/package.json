@@ -10,6 +10,7 @@
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
     "react-scripts": "3.2.0",
+    "sha.js": "^2.4.11",
     "uuid": "^3.3.3"
   },
   "scripts": {

@@ -1,13 +1,24 @@
 import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
-import Node from "./graph";
+import { Node, Vault } from "./graph";
 
-const node = new Node();
-node.on(["first_name", "last_name"], (data) => {
+const user = new Vault();
+user.login("rm.rf.etc@gmail.com", "password")
+.then((data) => {
+	console.log(data);
+})
+.catch((err) => {
+	console.log("login failed:", err);
+});
+
+const node1 = new Node("node1");
+// const node2 = new Node("node2");
+
+node1.on(["label", "group"], (data) => {
 	console.log("value:", data);
 });
 
-const submitWrite = (predicate, value) => node.write(predicate, value);
+const submitWrite = (predicate, value) => node1.write(predicate, value);
 
 const App = () => {
 	const [fname, setFirstName] = useState("");
@@ -26,8 +37,8 @@ const App = () => {
 	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
 	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
 	const doRead = useCallback(() => {
-		node.read("first_name", ({ data }) => setFirstName(data.first_name));
-		node.read("last_name", ({ data }) => setLastName(data.last_name));
+		node1.read("first_name", ({ data }) => setFirstName(data.first_name));
+		node1.read("last_name", ({ data }) => setLastName(data.last_name));
 	}, []);
 
 	return (

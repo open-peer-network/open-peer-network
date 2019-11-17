@@ -36,11 +36,14 @@ defmodule ElixirWebsocket.MixProject do
       {:phoenix_pubsub, "~> 1.1"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:caylir, "~> 0.11"},
+      # {:caylir, "~> 0.11"},
+      {:caylir, path: "./caylir"},
       {:elixir_uuid, "~> 1.2"},
       {:earmark, "~> 1.2", only: :dev},
       {:ex_doc, "~> 0.19", only: :dev},
       {:benchee, "~> 1.0", only: :dev},
+      {:guardian, "~> 2.0"},
+      {:delta_crdt, "~> 0.5.0"}
     ]
   end
 end

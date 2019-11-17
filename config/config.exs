@@ -13,7 +13,14 @@ config :elixir_websocket, ElixirWebsocketWeb.Endpoint,
 
 config :elixir_websocket, ElixirWebsocket.Caylir,
   host: "localhost",
-  port: 64210
+  port: 64210,
+  json_decoder: {Jason, :decode!, []},
+  json_encoder: {Jason, :encode!, []}
+
+# Use `mix guardian.gen.secret` to get a new secret
+config :elixir_websocket, ElixirWebsocket.Guardian,
+  issuer: "elixir_websocket",
+  secret_key: "oa7gkgNtpOGiiwHJgArd2DYaT0AiDNW5YHVLyQWm28ATQcOGFj2fPHCC76Q4i6tG"
 
 # Configures Elixir's Logger
 config :logger, :console,
