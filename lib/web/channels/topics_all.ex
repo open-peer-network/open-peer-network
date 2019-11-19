@@ -1,9 +1,8 @@
-defmodule ElixirWebsocketWeb.Topics do
+defmodule ElixirWebsocketWeb.TopicAll do
   use Phoenix.Channel
   # use Guardian, otp_app: :elixir_websocket
   alias ElixirWebsocket.Database
   alias ElixirWebsocketWeb.Endpoint
-  alias DeltaCrdt.AWLWWMap
 
   @moduledoc """
   In our architecture, each ID is a topic.
@@ -24,11 +23,15 @@ defmodule ElixirWebsocketWeb.Topics do
     {:ok, Phoenix.Socket.assign(socket, %{"topics" => []})}
   end
 
+  def handle_in("read:" <> req_id, payload, socket) do
+    push(socket, "read:#{req_id}", Database.query(payload))
+    {:noreply, socket}
+  end
+
   def handle_in("write", payload, socket) do
     case payload do
       %{"s" => s, "p" => p, "o" => o} when is_binary(s) and is_binary(p) and is_binary(o) ->
-        {:ok, crdt_pid} = DeltaCrdt.start_link(AWLWWMap, sync_interval: 50)
-        DeltaCrdt.mutate(crdt_pid, :add, ["#{s}:#{p}", o])
+        # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
 
         resp = Database.write(s, p, o)
         IO.puts("write: #{inspect(resp)}")
@@ -42,11 +45,6 @@ defmodule ElixirWebsocketWeb.Topics do
         IO.puts("write fail, no match for payload: #{inspect(payload)}")
         {:noreply, socket}
     end
-  end
-
-  def handle_in("read:" <> req_id, payload, socket) do
-    push(socket, "read:#{req_id}", Database.query(payload))
-    {:noreply, socket}
   end
 
   def handle_in("vault:" <> req_id, %{"s" => subj, "p" => pred, "password" => pw_stated}, socket) do

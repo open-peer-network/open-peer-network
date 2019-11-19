@@ -15,7 +15,7 @@ const backend = process.env.REACT_APP_HOST_DOMAIN;
 const socket = new Socket(`${backend}/socket`, {});
 socket.connect();
 
-const noneChannel = makeTopic("topic:none");
+const noneChannel = makeTopic("none");
 
 const read = (predicates, uuid, callback) => {
   if (isNotStringOrStringArray(predicates)) {
@@ -71,6 +71,10 @@ export class Node {
   read(predicates, callback) {
     read(predicates, this.uuid, callback);
   }
+
+  lock() {}
+
+  unlock() {}
 
 	on(predicates, callback) {
     if (isNotStringOrStringArray(predicates)) {

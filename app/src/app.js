@@ -4,12 +4,8 @@ import { Node, Vault } from "./graph";
 
 const user = new Vault();
 user.login("rm.rf.etc@gmail.com", "password")
-.then((data) => {
-	console.log(data);
-})
-.catch((err) => {
-	console.log("login failed:", err);
-});
+.then((data) => console.log(data))
+.catch((err) => console.log("login failed:", err));
 
 const node1 = new Node("node1");
 // const node2 = new Node("node2");
