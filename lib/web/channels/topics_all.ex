@@ -2,7 +2,12 @@ defmodule ElixirWebsocketWeb.TopicAll do
   use Phoenix.Channel
   # use Guardian, otp_app: :elixir_websocket
   alias ElixirWebsocket.Database
-  alias ElixirWebsocketWeb.Endpoint
+  # alias ElixirWebsocketWeb.Endpoint
+
+  # Temporary hardcoded secret key to use until NaCl is setup
+  @secret_key "48EkqJIWdB4bWoNznv9sNC3wagcoqAvQTSQjmTtyjtc="
+
+  @public_key "GFEwAov/WzRS+Dmq3KUtScROZ8oEeh+mkAtWMYY41xY="
 
   @moduledoc """
   In our architecture, each ID is a topic.
@@ -19,8 +24,19 @@ defmodule ElixirWebsocketWeb.TopicAll do
 
   def init(state), do: {:ok, state}
 
-  def join(_topics, _msg, socket) do
-    {:ok, Phoenix.Socket.assign(socket, %{"topics" => []})}
+  def join(_topics, payload, socket) do
+    case payload do
+      %{"public_key" => peer_key} ->
+        send(self(), :connect)
+        {:ok, Phoenix.Socket.assign(socket, %{"peer_key" => peer_key})}
+      _ ->
+        {:error, "connection requests must include your public_key"}
+    end
+  end
+
+  def handle_info(:connect, socket) do
+    push(socket, "connect", %{"public_key" => @public_key})
+    {:noreply, socket}
   end
 
   def handle_in("read:" <> req_id, payload, socket) do
@@ -28,23 +44,31 @@ defmodule ElixirWebsocketWeb.TopicAll do
     {:noreply, socket}
   end
 
-  def handle_in("write", payload, socket) do
-    case payload do
-      %{"s" => s, "p" => p, "o" => o} when is_binary(s) and is_binary(p) and is_binary(o) ->
-        # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
+  def handle_in("write", %{"box" => _box, "nonce" => _nonce}, socket) do
+    IO.puts("SOCKET: #{inspect(socket.assigns)}")
 
-        resp = Database.write(s, p, o)
-        IO.puts("write: #{inspect(resp)}")
+    # unboxed = Kcl.unbox(box, nonce, @secret_key, socket.assigns.peer_key)
+    # IO.puts("unboxed: #{inspect(unboxed)}")
+    # IO.puts("box: #{inspect(box)}")
 
-        resp = Endpoint.broadcast!("topic:#{s}:#{p}", "value", %{"data" => o})
-        IO.puts("broadcast returned: #{inspect(resp)}")
+    # case payload do
+    #   %{"s" => s, "p" => p, "o" => o} when is_binary(s) and is_binary(p) and is_binary(o) ->
+    #     # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
 
-        {:noreply, socket}
+    #     resp = Database.write(s, p, o)
+    #     IO.puts("write: #{inspect(resp)}")
 
-      _ ->
-        IO.puts("write fail, no match for payload: #{inspect(payload)}")
-        {:noreply, socket}
-    end
+    #     resp = Endpoint.broadcast!("#{s}:#{p}", "value", %{"data" => o})
+    #     IO.puts("broadcast returned: #{inspect(resp)}")
+
+    #     {:noreply, socket}
+
+    #   _ ->
+    #     IO.puts("write fail, no match for payload: #{inspect(payload)}")
+    #     {:noreply, socket}
+    # end
+
+    {:noreply, socket}
   end
 
   def handle_in("vault:" <> req_id, %{"s" => subj, "p" => pred, "password" => pw_stated}, socket) do
