@@ -1,6 +1,6 @@
-defmodule ElixirWebsocketWeb.TopicsTest do
+defmodule OPNWeb.TopicsTest do
   # use ExUnit.Case, async: true
-  # use ElixirWebsocketWeb.Topics
+  # use OPNWeb.Topics
 
   test "test 1" do
     assert 1 == 1

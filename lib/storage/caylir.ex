@@ -1,3 +1,3 @@
-defmodule ElixirWebsocket.Caylir do
-  use Caylir.Graph, otp_app: :elixir_websocket
+defmodule OPN.Caylir do
+  use Caylir.Graph, otp_app: :opn
 end

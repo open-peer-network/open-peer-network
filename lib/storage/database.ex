@@ -1,6 +1,6 @@
-defmodule ElixirWebsocket.Database do
-  use Phoenix.Endpoint, otp_app: :elixir_websocket
-  alias ElixirWebsocket.Caylir
+defmodule OPN.Database do
+  use Phoenix.Endpoint, otp_app: :opn
+  alias OPN.Caylir
 
   defp spo(s, p, o), do: %{"subject" => s, "predicate" => p, "object" => o}
 

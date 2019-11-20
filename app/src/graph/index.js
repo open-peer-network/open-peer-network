@@ -1,21 +1,18 @@
-import { Socket } from "phoenix";
 import getUUID from "uuid/v4";
 import merge from "lodash.merge";
 import values from "lodash.values";
 import {
-  spo,
-  sha,
-  doSwitch,
-  predicateAsTopic,
+  start,
   isNotStringOrStringArray,
+  makeTopic,
+  predicateAsTopic,
+  SPO,
+  encrypt,
 } from "../util";
 
 const { isArray } = Array;
-const backend = process.env.REACT_APP_HOST_DOMAIN;
-const socket = new Socket(`${backend}/socket`, {});
-socket.connect();
+const socket = start();
 
-const noneChannel = makeTopic("none");
 
 const read = (predicates, uuid, callback) => {
   if (isNotStringOrStringArray(predicates)) {
@@ -31,28 +28,11 @@ const read = (predicates, uuid, callback) => {
   };
   const requestId = `read:${getUUID()}`;
 
-  noneChannel.on(requestId, (resp) => {
+  socket.noneChannel.on(requestId, (resp) => {
     callback(resp);
-    noneChannel.off(requestId);
+    socket.noneChannel.off(requestId);
   });
-  noneChannel.push(requestId, payload);
-};
-
-const fetch = (msg, params, callback) => {
-  if (typeof msg !== "string") {
-    throw new Error(`fetch() arg 1 must be type String, received type '${typeof msg}'`);
-  }
-  doSwitch(msg, {
-    vault: () => {
-      const requestId = `vault:${getUUID()}`;
-
-      noneChannel.on(requestId, (resp) => {
-        callback(resp);
-        noneChannel.off(requestId);
-      });
-      noneChannel.push(requestId, params);
-    }
-  });
+  socket.noneChannel.push(requestId, payload);
 };
 
 export class Node {
@@ -62,9 +42,13 @@ export class Node {
 	topics = {};
 
 	constructor(namespace) {
+    if (!socket) {
+      throw new Error("connection not initialized");
+    }
     if (typeof namespace !== "string") {
       throw new Error("Node() requires a namespace String");
     }
+    this.socket = socket;
     this.uuid = namespace;
   }
 
@@ -116,7 +100,13 @@ export class Node {
     if (typeof predicate !== "string" || typeof object !== "string") {
       throw new Error("node.write() arg 1 and 2 must be of type String");
     }
-    this.useTopic(predicate).push("write", spo(this.uuid, predicate, object));
+    if (!this.socket || !this.socket.peerKey) {
+      console.log(this.socket);
+      console.error("Connection has closed");
+      return;
+    }
+    const payload = JSON.stringify(SPO(this.uuid, predicate, object));
+    this.useTopic(predicate).push("write", encrypt(payload));
   }
 
   useTopic(predicate) {
@@ -129,46 +119,50 @@ export class Node {
       return this.topics[topicString];
     }
 
-    const newTopic = makeTopic(topicString);
+    const newTopic = makeTopic(topicString, this.socket);
     this.topics[topicString] = newTopic;
 
     return newTopic;
   }
 }
 
-export class Vault {
-  authStatus = false;
+// const fetch = (msg, params, callback) => {
+//   if (typeof msg !== "string") {
+//     throw new Error(`fetch() arg 1 must be type String, received type '${typeof msg}'`);
+//   }
+//   doSwitch(msg, {
+//     vault: () => {
+//       const requestId = `vault:${getUUID()}`;
 
-  on(name, callback) {
-    //
-  }
+//       socket.noneChannel.on(requestId, (resp) => {
+//         callback(resp);
+//         socket.noneChannel.off(requestId);
+//       });
+//       socket.noneChannel.push(requestId, params);
+//     }
+//   });
+// };
 
-  login(name, password) {
-    return new Promise((res, rej) => {
-      /*
-      NOT A REAL IMPLEMENTATION
-      */
-      fetch("vault", {
-        s: sha(name),
-        p: ["password"],
-        password: sha(password),
-      }, (data) => {
-        if (data.status === "success") res(data);
-        else rej(data);
-      });
-    });
-  }
-}
+// export class Vault {
+//   authStatus = false;
 
-function makeTopic(topicString) {
-  if (!socket) {
-    throw new Error("socket not initialized, call graph.start() first");
-  }
-  console.log(`New topic: ${topicString}`);
-  const channel = socket.channel(topicString, {});
-  channel.join()
-    .receive("ok", () => console.log(`success, joined topic '${topicString}'`))
-    .receive("error", () => console.log(`failed to join topic '${topicString}'`));
+//   on(name, callback) {
+//     //
+//   }
 
-  return channel;
-}
+//   login(name, password) {
+//     return new Promise((res, rej) => {
+//       /*
+//       NOT A REAL IMPLEMENTATION
+//       */
+//       fetch("vault", {
+//         s: SHA(name),
+//         p: ["password"],
+//         password: SHA(password),
+//       }, (data) => {
+//         if (data.status === "success") res(data);
+//         else rej(data);
+//       });
+//     });
+//   }
+// }

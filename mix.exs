@@ -1,9 +1,9 @@
-defmodule ElixirWebsocket.MixProject do
+defmodule OPN.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :elixir_websocket,
+      app: :opn,
       version: "0.1.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -18,7 +18,7 @@ defmodule ElixirWebsocket.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {ElixirWebsocket.Application, []},
+      mod: {OPN.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -43,7 +43,8 @@ defmodule ElixirWebsocket.MixProject do
       {:ex_doc, "~> 0.19", only: :dev},
       {:benchee, "~> 1.0", only: :dev},
       {:guardian, "~> 2.0"},
-      {:delta_crdt, "~> 0.5.0"}
+      {:delta_crdt, "~> 0.5.0"},
+      {:kcl, "~> 1.2"}
     ]
   end
 end

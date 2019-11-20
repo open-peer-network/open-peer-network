@@ -1,4 +1,4 @@
-defmodule ElixirWebsocketWeb.ChannelCase do
+defmodule OPNWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -21,7 +21,7 @@ defmodule ElixirWebsocketWeb.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint ElixirWebsocketWeb.Endpoint
+      @endpoint OPNWeb.Endpoint
     end
   end
 
