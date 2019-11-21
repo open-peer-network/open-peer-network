@@ -104,29 +104,6 @@ defmodule OPNWeb.TopicAll do
     end
   end
 
-  def handle_in("vault:" <> req_id, %{"s" => subj, "p" => pred, "password" => pw_stated}, socket) do
-    #
-    # Implement Guardian here
-    #
-    case Database.query(%{"s" => subj, "p" => pred}) do
-      %{"data" => %{"password" => pw_found}} ->
-        if pw_found == pw_stated do
-          #
-          # NOT A REAL IMPLEMENTATION
-          #
-          push(socket, "vault:#{req_id}", %{"status" => "success"})
-        else
-          push(socket, "vault:#{req_id}", %{"status" => "denied"})
-        end
-
-        {:noreply, socket}
-
-      _ ->
-        push(socket, "vault:#{req_id}", %{"status" => "error", "code" => 500})
-        {:noreply, socket}
-    end
-  end
-
   def handle_in(action, payload, socket) do
     IO.puts("No match for action: #{inspect(action)}, payload: #{inspect(payload)}")
     {:noreply, socket}

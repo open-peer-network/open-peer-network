@@ -2,13 +2,8 @@ import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
 import { Node } from "./graph";
 
-// const user = new Vault();
-// user.login("rm.rf.etc@gmail.com", "password")
-// .then((data) => console.log(data))
-// .catch((err) => console.log("login failed:", err));
 
 const node1 = new Node("node1");
-// const node2 = new Node("node2");
 
 node1.on(["label", "group"], (data) => {
 	console.log("value:", data);
