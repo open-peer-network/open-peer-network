@@ -5,8 +5,7 @@ defmodule OPNWeb.TopicAll do
   # alias OPNWeb.Endpoint
 
   # Temporary hardcoded secret key to use until NaCl is setup
-  @secret_key "48EkqJIWdB4bWoNznv9sNC3wagcoqAvQTSQjmTtyjtc="
-
+  # @secret_key "48EkqJIWdB4bWoNznv9sNC3wagcoqAvQTSQjmTtyjtc="
   @public_key "GFEwAov/WzRS+Dmq3KUtScROZ8oEeh+mkAtWMYY41xY="
 
   @moduledoc """
