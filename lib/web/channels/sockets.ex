@@ -1,7 +1,7 @@
-defmodule ElixirWebsocketWeb.UserSocket do
+defmodule OPNWeb.UserSocket do
   use Phoenix.Socket
 
-  channel "*", ElixirWebsocketWeb.TopicAll
+  channel("*", OPNWeb.TopicAll)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -24,5 +24,5 @@ defmodule ElixirWebsocketWeb.UserSocket do
   # Socket id's are topics that identify all sockets for a given user
   # to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
-  # ElixirWebsocketWeb.Endpoint.broadcast("session:#{user.id}", "disconnect", %{})
+  # OPNWeb.Endpoint.broadcast("session:#{user.id}", "disconnect", %{})
 end

@@ -1,8 +1,8 @@
-defmodule ElixirWebsocketWeb.TopicAll do
+defmodule OPNWeb.TopicAll do
   use Phoenix.Channel
-  # use Guardian, otp_app: :elixir_websocket
-  alias ElixirWebsocket.Database
-  # alias ElixirWebsocketWeb.Endpoint
+  # use Guardian, otp_app: :opn
+  alias OPN.Database
+  # alias OPNWeb.Endpoint
 
   # Temporary hardcoded secret key to use until NaCl is setup
   @secret_key "48EkqJIWdB4bWoNznv9sNC3wagcoqAvQTSQjmTtyjtc="
@@ -29,6 +29,7 @@ defmodule ElixirWebsocketWeb.TopicAll do
       %{"public_key" => peer_key} ->
         send(self(), :connect)
         {:ok, Phoenix.Socket.assign(socket, %{"peer_key" => peer_key})}
+
       _ ->
         {:error, "connection requests must include your public_key"}
     end

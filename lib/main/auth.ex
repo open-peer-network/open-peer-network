@@ -1,6 +1,6 @@
-defmodule ElixirWebsocket.Guardian do
-  use Guardian, otp_app: :elixir_websocket
-  # alias ElixirWebsocket.Database
+defmodule OPN.Guardian do
+  use Guardian, otp_app: :opn
+  # alias OPN.Database
 
   def subject_for_token(resource, _claims) do
     {:ok, to_string(resource.id)}

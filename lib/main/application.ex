@@ -1,4 +1,4 @@
-defmodule ElixirWebsocket.Application do
+defmodule OPN.Application do
   @moduledoc false
   use Application
 
@@ -7,23 +7,23 @@ defmodule ElixirWebsocket.Application do
       # {
       #   Registry,
       #   keys: :unique,
-      #   name: Registry.ElixirWebsocket
+      #   name: Registry.OPN
       # },
       # DeltaCrdt.CausalCrdt,
-      ElixirWebsocketWeb.Endpoint,
-      ElixirWebsocket.Caylir
+      OPNWeb.Endpoint,
+      OPN.Caylir
     ]
 
     Supervisor.start_link(children,
       strategy: :one_for_one,
-      name: ElixirWebsocket.Supervisor
+      name: OPN.Supervisor
     )
   end
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    ElixirWebsocketWeb.Endpoint.config_change(changed, removed)
+    OPNWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 end
