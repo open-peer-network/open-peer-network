@@ -15,8 +15,8 @@ export const start = () => {
     const firstResponseHandler = ({ payload }) => {
         if (payload.public_key) {
             // Make trusted.
-            socket.peerKey = payload.public_key;
-            console.log("Received publicKey:", socket.peerKey);
+            socket.publicKey = payload.public_key;
+            console.log("Received publicKey:", socket.publicKey);
             // Remove this listener.
             const idx = socket.stateChangeCallbacks.message.indexOf(firstResponseHandler);
             socket.stateChangeCallbacks.message.splice(idx, 1);
@@ -78,7 +78,8 @@ const mySecretKey = () => {
     return SESSION_KEYS.secretKey;
 };
 
-export const encrypt = (message) => {
+export const encrypt = (json) => {
+    const message = JSON.stringify(json);
     // NaCl requires this.
     const nonce = nacl.randomBytes(24);
 
@@ -86,7 +87,7 @@ export const encrypt = (message) => {
     const box = nacl.box(
         util.decodeUTF8(message),
         nonce,
-        util.decodeBase64(socket.peerKey),
+        util.decodeBase64(socket.publicKey),
         util.decodeBase64(mySecretKey()),
     );
 
@@ -94,6 +95,18 @@ export const encrypt = (message) => {
         box: bytesToBase64(box),
         nonce: bytesToBase64(nonce),
     };
+};
+
+export const decrypt = (box, nonce) => {
+    const packet = nacl.box.open(
+        util.decodeBase64(box),
+        util.decodeBase64(nonce),
+        util.decodeBase64(socket.publicKey),
+        util.decodeBase64(mySecretKey()),
+    );
+    const json = new TextDecoder("utf-8").decode(packet);
+
+    return JSON.parse(json);
 };
 
 const backend = process.env.REACT_APP_HOST_DOMAIN;
@@ -113,6 +126,7 @@ export function makeTopic(topicString, socket) {
 }
 
 // How we generated this is included below.
+// Source: https://gist.github.com/enepomnyaschih/72c423f727d395eeaa09697058238727
 const base64abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
 
 // const base64abc = (() => {

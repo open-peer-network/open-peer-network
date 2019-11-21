@@ -21,6 +21,31 @@ defmodule OPNWeb.TopicAll do
   `{ "data": "Rob" }`
   """
 
+  defp nonce() do
+    :binary.list_to_bin(for _ <- 1..24, do: Enum.random(0..255))
+  end
+
+  defp encrypt(socket, data) do
+    Kcl.box(
+      Jason.encode!(data),
+      nonce(),
+      Base.decode64!(@secret_key),
+      Base.decode64!(socket.assigns["public_key"])
+    )
+  end
+
+  defp decrypt(socket, box, nonce) do
+    {json, _state} =
+      Kcl.unbox(
+        Base.decode64!(box),
+        Base.decode64!(nonce),
+        Base.decode64!(@secret_key),
+        Base.decode64!(socket.assigns["public_key"])
+      )
+
+    json
+  end
+
   def init(state), do: {:ok, state}
 
   def join(_topics, payload, socket) do
@@ -39,21 +64,29 @@ defmodule OPNWeb.TopicAll do
     {:noreply, socket}
   end
 
-  def handle_in("read:" <> req_id, payload, socket) do
-    push(socket, "read:#{req_id}", Database.query(payload))
-    {:noreply, socket}
+  def handle_in("read:" <> req_id, %{"box" => box, "nonce" => nonce}, socket) do
+    query_map = Jason.decode!(decrypt(socket, box, nonce))
+
+    case Database.query(query_map) do
+      {:ok, data} ->
+        {msg, state} = encrypt(socket, data)
+
+        push(socket, "read:#{req_id}", %{
+          "box" => Base.encode64(msg),
+          "nonce" => Base.encode64(state.previous_nonce)
+        })
+
+        {:noreply, socket}
+
+      {:error, reason} ->
+        push(socket, "read:#{req_id}", %{"error" => reason})
+        IO.puts("query failed: #{inspect(reason)}")
+        {:noreply, socket}
+    end
   end
 
   def handle_in("write", %{"box" => box, "nonce" => nonce}, socket) do
-    {json, _state} =
-      Kcl.unbox(
-        Base.decode64!(box),
-        Base.decode64!(nonce),
-        Base.decode64!(@secret_key),
-        Base.decode64!(socket.assigns["public_key"])
-      )
-
-    case Jason.decode(json) do
+    case Jason.decode(decrypt(socket, box, nonce)) do
       {:ok, %{"s" => s, "p" => p, "o" => o}}
       when is_binary(s) and is_binary(p) and is_binary(o) ->
         # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
@@ -65,7 +98,7 @@ defmodule OPNWeb.TopicAll do
 
         {:noreply, socket}
 
-      _ ->
+      json ->
         IO.puts("JSON decode failed: #{inspect(json)}")
         {:noreply, socket}
     end

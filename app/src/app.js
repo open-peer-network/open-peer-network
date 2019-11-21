@@ -33,8 +33,8 @@ const App = () => {
 	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
 	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
 	const doRead = useCallback(() => {
-		node1.read("first_name", ({ data }) => setFirstName(data.first_name));
-		node1.read("last_name", ({ data }) => setLastName(data.last_name));
+		node1.read("first_name", (data) => setFirstName(data.first_name));
+		node1.read("last_name", (data) => setLastName(data.last_name));
 	}, []);
 
 	return (

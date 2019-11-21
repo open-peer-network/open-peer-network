@@ -16,8 +16,12 @@ defmodule OPN.Database do
 
            g.emit(result);
          """) do
-      [data] -> %{"subject" => subj, "data" => data}
-      resp -> IO.puts("query failed miserably: #{inspect(resp)}")
+      [data] ->
+        {:ok, %{"subject" => subj, "data" => data}}
+
+      resp ->
+        IO.puts("query failed miserably: #{inspect(resp)}")
+        {:error, resp}
     end
   end
 

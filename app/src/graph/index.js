@@ -8,6 +8,7 @@ import {
   predicateAsTopic,
   SPO,
   encrypt,
+  decrypt,
 } from "../util";
 
 const { isArray } = Array;
@@ -22,17 +23,24 @@ const read = (predicates, uuid, callback) => {
     throw new Error("node.read() arg 2 type must be Function");
   }
 
-  const payload = {
-    s: uuid,
-    p: [].concat(predicates),
-  };
   const requestId = `read:${getUUID()}`;
 
   socket.noneChannel.on(requestId, (resp) => {
-    callback(resp);
+    if (!resp.box || !resp.nonce) {
+      console.error("Invalid response:", resp);
+      return;
+    }
+
+    const { data, subject } = decrypt(resp.box, resp.nonce);
+    callback(data, subject);
     socket.noneChannel.off(requestId);
   });
-  socket.noneChannel.push(requestId, payload);
+
+  const packet = encrypt({
+    s: uuid,
+    p: [].concat(predicates),
+  });
+  socket.noneChannel.push(requestId, packet);
 };
 
 export class Node {
@@ -100,15 +108,14 @@ export class Node {
     if (typeof predicate !== "string" || typeof object !== "string") {
       throw new Error("node.write() arg 1 and 2 must be of type String");
     }
-    if (!this.socket || !this.socket.peerKey) {
+    if (!this.socket || !this.socket.publicKey) {
       console.log(this.socket);
       console.error("Connection has closed");
       return;
     }
-    const packet = encrypt(
-      JSON.stringify(SPO(this.uuid, predicate, object))
-    );
-    this.useTopic(predicate).push("write", packet);
+
+    const packet = SPO(this.uuid, predicate, object);
+    this.useTopic(predicate).push("write", encrypt(packet));
   }
 
   useTopic(predicate) {
