@@ -105,8 +105,10 @@ export class Node {
       console.error("Connection has closed");
       return;
     }
-    const payload = JSON.stringify(SPO(this.uuid, predicate, object));
-    this.useTopic(predicate).push("write", encrypt(payload));
+    const packet = encrypt(
+      JSON.stringify(SPO(this.uuid, predicate, object))
+    );
+    this.useTopic(predicate).push("write", packet);
   }
 
   useTopic(predicate) {
