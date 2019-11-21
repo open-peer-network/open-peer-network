@@ -14,6 +14,8 @@ defmodule OPN.Application do
       OPN.Caylir
     ]
 
+    # {public_key, secret_key} = Kcl.generate_key_pair()
+
     Supervisor.start_link(children,
       strategy: :one_for_one,
       name: OPN.Supervisor
