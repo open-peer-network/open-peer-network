@@ -21,7 +21,7 @@ defmodule OPNWeb.TopicAll do
   `{ "data": "Rob" }`
   """
 
-  defp encrypt(socket, data) do
+  defp encrypt(socket, data) when is_map(data) do
     Kcl.box(
       Jason.encode!(data),
       :crypto.strong_rand_bytes(24),
@@ -30,7 +30,7 @@ defmodule OPNWeb.TopicAll do
     )
   end
 
-  defp decrypt(socket, box, nonce) do
+  defp decrypt(socket, box, nonce) when is_binary(box) and is_binary(nonce) do
     {json, _state} =
       Kcl.unbox(
         Base.decode64!(box),

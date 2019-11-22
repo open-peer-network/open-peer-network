@@ -1,12 +1,14 @@
 import getUUID from "uuid/v4";
 import merge from "lodash.merge";
 import values from "lodash.values";
-import { isNotStringOrStringArray } from "../util/helpers";
+import {
+	isNotStringOrStringArray,
+	triple,
+	double,
+} from "../util/helpers";
 import {
 	connect,
 	predicateAsTopic,
-	triple,
-	double,
 	newChannel,
 } from "../util";
 import {

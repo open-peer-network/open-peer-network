@@ -15,7 +15,7 @@ defmodule OPNWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
 
-  def connect(_params, socket, _connect_info) do
+  def connect(_params, socket, _info) do
     {:ok, assign(socket, :user_id, UUID.uuid4())}
   end
 

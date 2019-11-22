@@ -14,6 +14,12 @@ defmodule OPN.Application do
       OPN.Caylir
     ]
 
+    # Use cryptographically strong seed for random number generator
+    <<i1::unsigned-integer-32, i2::unsigned-integer-32, i3::unsigned-integer-32>> =
+      :crypto.strong_rand_bytes(12)
+
+    :rand.seed(:exsplus, {i1, i2, i3})
+
     # {public_key, secret_key} = Kcl.generate_key_pair()
 
     Supervisor.start_link(children,

@@ -61,7 +61,3 @@ export function newChannel(topicString, successHandler, failureHandler) {
 
 	return channel;
 }
-
-export const triple = (s, p, o) => ({ s, p, o });
-export const double = (s, p) => ({ s, p });
-export const single = (s) => ({ s });
