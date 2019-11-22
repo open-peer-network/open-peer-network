@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
+import { publicKey } from "./util/crypto";
 import { Node } from "./graph";
 
 
@@ -27,6 +28,7 @@ const App = () => {
 	}, []);
 	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
 	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
+
 	const doRead = useCallback(() => {
 		node1.read("first_name", (data) => setFirstName(data.first_name));
 		node1.read("last_name", (data) => setLastName(data.last_name));
@@ -35,11 +37,15 @@ const App = () => {
 	return (
 		<div className="App">
 			<div>
-				<label htmlFor="first_name">First Name</label>
+				<label htmlFor="pubkey">Public Key: </label>
+				<input name="pubkey" className="monospace" value={publicKey()} readOnly />
+			</div>
+			<div>
+				<label htmlFor="first_name">First Name: </label>
 				<input name="first_name" onChange={typingFirstName} value={fnameRef.current} />
 			</div>
 			<div>
-				<label htmlFor="last_name">Last Name</label>
+				<label htmlFor="last_name">Last Name: </label>
 				<input name="last_name" onChange={typingLastName} value={lnameRef.current} />
 			</div>
 			<button onClick={submit}>Write</button>

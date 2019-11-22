@@ -14,13 +14,33 @@ import {
 import {
 	encrypt,
 	decrypt,
+	keyFromPassword,
+	storeKeys,
 } from "../util/crypto";
 
 
 const { isArray } = Array;
 
 const backend = process.env.REACT_APP_HOST_DOMAIN;
+const password = process.env.REACT_APP_PASSWORD;
+const email = process.env.REACT_APP_USER_EMAIL;
+
+storeKeys(keyFromPassword(email + password));
 const socket = connect(`${backend}/socket`);
+
+export class User {
+	keys = {};
+
+	// Implementation coming soon.
+
+	login(email, password) {
+		this.keys = keyFromPassword(email + password);
+	}
+
+	register(email, password) {
+		this.keys = keyFromPassword(email + password);
+	}
+}
 
 export class Node {
 	socket = null;
@@ -38,6 +58,10 @@ export class Node {
 		this.socket = socket;
 		this.uuid = namespace;
 	}
+
+	lock() {}
+
+	unlock() {}
 
 	read(predicates, callback) {
 		if (isNotStringOrStringArray(predicates)) {
@@ -62,10 +86,6 @@ export class Node {
 		const packet = encrypt(double(this.uuid, [].concat(predicates)), socket.publicKey);
 		socket.noneChannel.push(requestId, packet);
 	}
-
-	lock() {}
-
-	unlock() {}
 
 	on(predicates, callback) {
 		if (isNotStringOrStringArray(predicates)) {
