@@ -21,14 +21,10 @@ defmodule OPNWeb.TopicAll do
   `{ "data": "Rob" }`
   """
 
-  defp nonce() do
-    :binary.list_to_bin(for _ <- 1..24, do: Enum.random(0..255))
-  end
-
   defp encrypt(socket, data) do
     Kcl.box(
       Jason.encode!(data),
-      nonce(),
+      :crypto.strong_rand_bytes(24),
       Base.decode64!(@secret_key),
       Base.decode64!(socket.assigns["public_key"])
     )
@@ -55,7 +51,7 @@ defmodule OPNWeb.TopicAll do
         {:ok, Phoenix.Socket.assign(socket, %{"public_key" => public_key})}
 
       _ ->
-        {:error, "connection requests must include your public_key"}
+        {:error, "connection requests must include your `public_key`"}
     end
   end
 
