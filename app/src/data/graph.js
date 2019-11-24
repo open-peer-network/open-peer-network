@@ -1,47 +1,103 @@
 import connection from "./connect";
+import localState from "./state";
 import {
-	isNotStringOrStringArray,
-	double,
+	err,
+	errOut,
+	triple,
+	notStrings,
+	validateCredentials,
 } from "./helpers";
 import {
 	keyFromPassword,
 	storeKeys,
 	publicKey,
 } from "./crypto";
-import isString from "lodash.isstring";
 
 
 const backend = process.env.REACT_APP_HOST_DOMAIN;
 connection.start(`${backend}/socket`);
 
-
 export class Node {
-	uuid = null;
-	listeners = {};
-	topics = {};
+	uuid = false;
+	listeners = [];
+	fetchStack = [];
+	watchStack = [];
+	topicValues = {};
 
-	read(predicates, callback) {
-		if (isNotStringOrStringArray(predicates))
-			throw new Error("node.read() arg 1 type must be either String or Array<String>");
-		if (typeof callback !== "function")
-			throw new Error("node.read() arg 2 type must be Function");
-		connection.read(
-			double(this.uuid, [].concat(predicates)),
-			callback,
-		);
+	topic(predicate) {
+		return this.uuid ? `${this.uuid}:${predicate}` : false;
 	}
 
-	on(predicates, callback) {
-		if (isNotStringOrStringArray(predicates))
-			throw new Error("node.on() arg 1 type must be either String or Array<String>");
-		if (typeof callback !== "function")
-			throw new Error("node.on() arg 2 type must be Function");
-		connection.on(predicates, callback);
+	_emptyFetchStack() {
+		while (this.fetchStack.length) {
+			this._fetch.apply(this, this.fetchStack.shift());
+		}
+	}
+
+	_emptyWatchStack() {
+		while (this.watchStack.length) {
+			this._watch.apply(this, this.watchStack.shift());
+		}
+	}
+
+	fetch(predicates, callback) {
+		notStrings(predicates, "node.read() arg 1 type must be either String or Array<String>");
+		errOut(typeof callback !== "function", "node.read() arg 2 type must be Function");
+
+		if (!this.uuid) {
+			[].concat(predicates).forEach((pred) => {
+				this.fetchStack.push([pred, callback]);
+			});
+		} else {
+			[].concat(predicates).forEach((pred) => {
+				this._fetch(pred, callback);
+			});
+		}
+	}
+
+	_fetch(predicate, callback) {
+		localState.watch(this.topic(predicate), callback);
+	}
+
+	watch(predicates, callback) {
+		notStrings(predicates, "node.on() arg 1 type must be either String or Array<String>");
+		errOut(typeof callback !== "function", "node.on() arg 2 type must be Function");
+
+		if (this.uuid) {
+			[].concat(predicates).forEach((predicate) => {
+				localState.watch(this.topic(predicate), callback);
+			});
+		} else {
+			[].concat(predicates).forEach((predicate) => {
+				this.watchStack.push([predicate, callback]);
+			});
+		}
+	}
+
+	fetchAndWatch(predicates, callback) {
+		if (this.uuid) {
+			[].concat(predicates).forEach((predicate) => {
+				this.fetch(predicate, callback);
+				this.watch(predicate, callback);
+			});
+		} else {
+			[].concat(predicates).forEach((predicate) => {
+				this.fetchStack.push([predicate, callback]);
+				this.watchStack.push([predicate, callback]);
+			});
+		}
+	}
+
+	blobFetch(shape, callback) {
+		//
+	}
+
+	blobFetchAndWatch(shape, callback) {
+		//
 	}
 
 	off(predicates) {
-		if (isNotStringOrStringArray(predicates))
-			throw new Error("node.off() arg 1 type must be either String or Array<String>");
+		notStrings(predicates, "node.off() arg 1 type must be either String or Array<String>");
 		connection.off(predicates);
 	}
 
@@ -50,27 +106,28 @@ export class Node {
 	}
 
 	write(prop, value) {
-		if (typeof prop !== "string" || typeof value !== "string")
-			throw new Error("node.write() arg 1 and 2 must be of type String");
+		errOut(typeof prop !== "string" || typeof value !== "string",
+			"node.write() arg 1 and 2 must be of type String");
 
-		connection.write(this.uuid, prop, value);
+		if (this.uuid) {
+			connection.write(this.topic(prop), triple(this.uuid, prop, value));
+		} else {
+			err("node.write() called but no UUID found");
+		}
 	}
 }
 
-class User extends Node {
-	keychain = {};
-	node = null;
 
-	credentials(email, password) {
-		if (!isString(email) || !isString(password))
-			throw new Error("login received invalid input");
-		if (password.length < 12)
-			throw new Error("password length must be at least 12 characters or longer");
-	}
+class User extends Node {
+	node = null;
+	keychain = {};
+	readListeners = [];
+	watchListeners = [];
+	fetchAndWatchStack = [];
 
 	login(email, password) {
-		if (publicKey()) throw new Error("user.login() called while already logged in");
-		this.credentials(email, password);
+		// if (publicKey()) throw new Error("user.login() called while already logged in");
+		validateCredentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
 		this.uuid = publicKey();
@@ -86,7 +143,7 @@ class User extends Node {
 
 	register(email, password) {
 		if (publicKey()) throw new Error("user.register() called while already logged in");
-		this.credentials(email, password);
+		validateCredentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
 		this.uuid = publicKey();

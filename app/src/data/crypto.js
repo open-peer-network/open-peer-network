@@ -6,14 +6,14 @@ import buffer from "scrypt-js/thirdparty/buffer";
 import { bytesToBase64 } from "./encoding";
 
 
-let SESSION_KEYS = {};
+let SESSION_KEYS = generateKeyPair();
 
 // Just a temporary hack while we migrate to a better way.
 export const storeKeys = (keys) => {
 	SESSION_KEYS = keys;
 };
 
-export const generateKeyPair = () => {
+export function generateKeyPair() {
 	const { publicKey, secretKey } = nacl.box.keyPair();
 	return {
 		publicKey: util.encodeBase64(publicKey),

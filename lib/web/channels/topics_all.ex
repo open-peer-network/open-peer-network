@@ -1,6 +1,5 @@
 defmodule OPNWeb.TopicAll do
   use Phoenix.Channel
-  # use Guardian, otp_app: :opn
   alias OPN.Database
   alias OPNWeb.Endpoint
 
@@ -89,7 +88,7 @@ defmodule OPNWeb.TopicAll do
         resp = Database.write(s, p, o)
         IO.puts("write: #{inspect(resp)}")
 
-        resp = Endpoint.broadcast!("#{s}:#{p}", "value", %{"data" => o})
+        resp = Endpoint.broadcast!("#{s}:#{p}", "value", %{"data" => %{p => o}})
         IO.puts("broadcast returned: #{inspect(resp)}")
 
         {:noreply, socket}

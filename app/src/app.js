@@ -1,59 +1,62 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useReducer, useCallback, useRef, useEffect } from "react";
+// import connection from "./data/connect";
 import "./index.css";
 import { publicKey } from "./data/crypto";
 import user from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
-
 user.login(email, password);
 
+const reducer = (oldState, newState) => {
+	return {
+		...oldState,
+		...newState,
+	};
+};
+const initialState = {
+	first_name: "",
+	last_name: "",
+	email: "",
+};
+
 const App = () => {
-	const [fname, setFirstName] = useState("");
-	const [lname, setLastName] = useState("");
-	const [email, setEmail] = useState("");
+	const [state, dispatch] = useReducer(reducer, initialState);
+	const stateRef = useRef(initialState);
+	stateRef.current = state || initialState;
 
-	const fnameRef = useRef("");
-	const lnameRef = useRef("");
-	const emailRef = useRef("");
+	const typingFirstName = useCallback(({ target }) => user.write("first_name", target.value), []);
+	const typingLastName = useCallback(({ target }) => user.write("last_name", target.value), []);
+	const typingEmail = useCallback(({ target }) => user.write("email", target.value), []);
 
-	fnameRef.current = fname || "";
-	lnameRef.current = lname || "";
-	emailRef.current = email || "";
-
-	const submit = useCallback(() => {
-		user.write("first_name", fnameRef.current);
-		user.write("last_name", lnameRef.current);
-	}, []);
-	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
-	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
-	const typingEmail = useCallback(({ target }) => setEmail(target.value), []);
-
-	const doRead = useCallback(() => {
-		user.read("first_name", (data) => setFirstName(data.first_name));
-		user.read("last_name", (data) => setLastName(data.last_name));
+	useEffect(() => {
+		user.fetchAndWatch([
+			"first_name",
+			"last_name",
+		], ({ data }) => {
+			console.log("fetch watch", data);
+			dispatch(data);
+		});
 	}, []);
 
 	return (
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={publicKey()} readOnly />
+				<input name="pubkey" className="monospace" value={publicKey() || ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>
-				<input name="first_name" onChange={typingFirstName} value={fnameRef.current} />
+				<input name="first_name" onChange={typingFirstName} value={stateRef.current.first_name || ""} />
 			</div>
 			<div>
 				<label htmlFor="last_name">Last Name: </label>
-				<input name="last_name" onChange={typingLastName} value={lnameRef.current} />
+				<input name="last_name" onChange={typingLastName} value={stateRef.current.last_name || ""} />
 			</div>
 			<div>
 				<label htmlFor="email">Email: </label>
-				<input name="email" onChange={typingEmail} value={emailRef.current} />
+				<input name="email" onChange={typingEmail} value={stateRef.current.email || ""} />
 			</div>
-			<button onClick={submit}>Write</button>
-			<button onClick={doRead}>Read</button>
 		</div>
 	);
 }
