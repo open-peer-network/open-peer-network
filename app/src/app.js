@@ -7,7 +7,6 @@ const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
 
 user.login(email, password);
-window.user = user;
 
 const App = () => {
 	const [fname, setFirstName] = useState("");

@@ -25,12 +25,6 @@ export class Node {
 		this.socket = socket;
 	}
 
-	setUUID(uuid) {
-		if (typeof uuid !== "string")
-			throw new Error("node.setUUID() requires a UUID String");
-		this.uuid = uuid;
-	}
-
 	read(predicates, callback) {
 		if (isNotStringOrStringArray(predicates))
 			throw new Error("node.read() arg 1 type must be either String or Array<String>");
@@ -84,7 +78,7 @@ class User extends Node {
 		this.credentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
-		this.setUUID(publicKey());
+		this.uuid = publicKey();
 	}
 
 	logout() {
@@ -92,6 +86,7 @@ class User extends Node {
 
 		storeKeys({});
 		this.keychain = {};
+		this.uuid = null;
 	}
 
 	register(email, password) {
@@ -99,7 +94,7 @@ class User extends Node {
 		this.credentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
-		this.setUUID(publicKey());
+		this.uuid = publicKey();
 	}
 }
 
