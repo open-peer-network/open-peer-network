@@ -2,7 +2,7 @@
 
 ## Security Resources For Developers
 - https://smallstep.com/cli/
-- https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Authentication_Cheat_Sheet.md
+- https://github.com/OWASP/CheatSheetSeries/blob/master/Index.md
 
 
 ## Setup
