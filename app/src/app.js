@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from "react";
 import "./index.css";
-import { publicKey } from "./util/crypto";
-import user from "./graph";
+import { publicKey } from "./data/crypto";
+import user from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;

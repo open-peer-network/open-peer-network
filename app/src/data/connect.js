@@ -4,26 +4,26 @@ import merge from "lodash.merge";
 import values from "lodash.values";
 import {
     publicKey,
-} from "../util/crypto";
+} from "./crypto";
 import {
     isNotStringOrStringArray,
     triple,
-} from "../util/helpers";
+} from "./helpers";
 import {
     encrypt,
     decrypt,
-} from "../util/crypto";
+} from "./crypto";
 
 const { isArray } = Array;
 const predicateAsTopic = (s, p) => `${s}:${p}`;
 
-export class SocketConnection {
+class SocketConnection {
     socket = null;
     uuid = null;
     listeners = {};
     topics = {};
 
-    constructor(url) {
+    start(url) {
         const socket = new Socket(url);
         this.socket = socket;
 
@@ -174,3 +174,5 @@ export class SocketConnection {
         return channel;
     }
 }
+
+export default new SocketConnection();

@@ -1,36 +1,31 @@
-import { SocketConnection } from "../connection/socket";
+import connection from "./connect";
 import {
 	isNotStringOrStringArray,
 	double,
-} from "../util/helpers";
+} from "./helpers";
 import {
 	keyFromPassword,
 	storeKeys,
 	publicKey,
-} from "../util/crypto";
+} from "./crypto";
 import isString from "lodash.isstring";
 
 
 const backend = process.env.REACT_APP_HOST_DOMAIN;
-const socket = new SocketConnection(`${backend}/socket`);
+connection.start(`${backend}/socket`);
+
 
 export class Node {
-	socket = null;
 	uuid = null;
 	listeners = {};
 	topics = {};
-
-	constructor() {
-		if (!socket) throw new Error("connection not initialized");
-		this.socket = socket;
-	}
 
 	read(predicates, callback) {
 		if (isNotStringOrStringArray(predicates))
 			throw new Error("node.read() arg 1 type must be either String or Array<String>");
 		if (typeof callback !== "function")
 			throw new Error("node.read() arg 2 type must be Function");
-		socket.read(
+		connection.read(
 			double(this.uuid, [].concat(predicates)),
 			callback,
 		);
@@ -41,24 +36,24 @@ export class Node {
 			throw new Error("node.on() arg 1 type must be either String or Array<String>");
 		if (typeof callback !== "function")
 			throw new Error("node.on() arg 2 type must be Function");
-		socket.on(predicates, callback);
+		connection.on(predicates, callback);
 	}
 
 	off(predicates) {
 		if (isNotStringOrStringArray(predicates))
 			throw new Error("node.off() arg 1 type must be either String or Array<String>");
-		socket.off(predicates);
+		connection.off(predicates);
 	}
 
 	clear() {
-		socket.clear();
+		connection.clear();
 	}
 
 	write(prop, value) {
 		if (typeof prop !== "string" || typeof value !== "string")
 			throw new Error("node.write() arg 1 and 2 must be of type String");
 
-		socket.write(this.uuid, prop, value);
+		connection.write(this.uuid, prop, value);
 	}
 }
 
