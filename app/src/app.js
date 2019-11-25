@@ -33,6 +33,7 @@ const App = () => {
 		user.fetchAndWatch([
 			"first_name",
 			"last_name",
+			"email",
 		], ({ data }) => {
 			console.log("fetch watch", data);
 			dispatch(data);

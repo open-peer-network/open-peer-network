@@ -43,11 +43,11 @@ defmodule OPNWeb.TopicAll do
 
   def init(state), do: {:ok, state}
 
-  def join(_topics, payload, socket) do
+  def join(topic, payload, socket) do
     case payload do
       %{"public_key" => public_key} ->
         send(self(), :new_connection)
-        {:ok, Phoenix.Socket.assign(socket, %{"public_key" => public_key})}
+        {:ok, Phoenix.Socket.assign(socket, %{"public_key" => public_key, "topic" => topic})}
 
       _ ->
         {:error, "connection requests must include your `public_key`"}
@@ -59,14 +59,14 @@ defmodule OPNWeb.TopicAll do
     {:noreply, socket}
   end
 
-  def handle_in("read:" <> req_id, %{"box" => box, "nonce" => nonce}, socket) do
-    query_map = Jason.decode!(decrypt(socket, box, nonce))
+  def handle_in("fetch", _, socket) do
+    [subj, pred] = String.split(socket.assigns["topic"], ":")
 
-    case Database.query(query_map) do
+    case Database.query(%{"s" => subj, "p" => [pred]}) do
       {:ok, data} ->
         {msg, state} = encrypt(socket, data)
 
-        push(socket, "read:#{req_id}", %{
+        push(socket, "fetch response", %{
           "box" => Base.encode64(msg),
           "nonce" => Base.encode64(state.previous_nonce)
         })
@@ -74,7 +74,7 @@ defmodule OPNWeb.TopicAll do
         {:noreply, socket}
 
       {:error, reason} ->
-        push(socket, "read:#{req_id}", %{"error" => reason})
+        push(socket, "fetch response", %{"error" => reason})
         IO.puts("query failed: #{inspect(reason)}")
         {:noreply, socket}
     end

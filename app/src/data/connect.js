@@ -1,5 +1,5 @@
 import { Socket } from "phoenix";
-import getUUID from "uuid/v4";
+// import getUUID from "uuid/v4";
 import values from "lodash.values";
 import isString from "lodash.isstring";
 import {
@@ -88,25 +88,21 @@ class SocketConnection {
 			this.fetchStack.push([topicString, callback]);
 			return;
 		}
+
 		while (this.fetchStack.length) {
 			this._fetch.apply(this, this.fetchStack.shift());
 		}
 		return this._fetch(topicString, callback);
 	}
 
-	_fetch(queryObject, callback) {
-		const requestId = `read:${getUUID()}`;
-
-		this.socket.noneChannel.on(requestId, (resp) => {
-			// If invalid response, log error and exit early.
-			if (!resp.box || !resp.nonce) return console.error("Invalid response:", resp);
-
-			const { data, subject } = this.decrypt(resp);
-			callback(data, subject);
-			this.socket.noneChannel.off(requestId);
+	_fetch(topicString, callback) {
+		this.useTopic(topicString).then((channel) => {
+			const ref = channel.on("fetch response", (data) => {
+				callback(this.decrypt(data));
+				channel.off("fetch response", ref);
+			});
+			channel.push("fetch");
 		});
-
-		this.socket.noneChannel.push(requestId, this.encrypt(queryObject));
 	}
 
 	watch(topicString, callback) {
@@ -122,7 +118,7 @@ class SocketConnection {
 	}
 
 	_watch(topicString, callback) {
-		this.useTopic(topicString).on("value", callback);
+		this.useTopic(topicString).then((chan) => chan.on("value", callback));
 		this.listeners[topicString] = callback;
 	}
 
@@ -149,7 +145,7 @@ class SocketConnection {
 			console.error("Connection has closed");
 			return;
 		}
-		this.useTopic(topic).push("write", this.encrypt(value));
+		this.useTopic(topic).then((chan) => chan.push("write", this.encrypt(value)));
 	}
 
 	useTopic(topicString) {
@@ -159,12 +155,12 @@ class SocketConnection {
 		}
 
 		if (this.topics[topicString]) {
-			return this.topics[topicString];
+			return new Promise((res) => res(this.topics[topicString]));
 		}
 
-		this.topics[topicString] = this.newChannel(topicString);
-
-		return this.topics[topicString];
+		return new Promise((res, rej) => {
+			this.topics[topicString] = this.newChannel(topicString, res, rej);
+		});
 	}
 
 	newChannel(topicString, successHandler, failureHandler) {
@@ -177,10 +173,10 @@ class SocketConnection {
 		});
 
 		channel.join()
-			.receive("ok", successHandler || function () {
+			.receive("ok", successHandler ? () => successHandler(channel) : () => {
 				console.log(`success, joined topic '${topicString}'`);
 			})
-			.receive("error", failureHandler || function () {
+			.receive("error", failureHandler ? () => failureHandler(channel) : () => {
 				console.log(`failed to join topic '${topicString}'`);
 			});
 

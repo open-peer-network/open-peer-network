@@ -56,7 +56,7 @@ export class Node {
 	}
 
 	_fetch(predicate, callback) {
-		localState.watch(this.topic(predicate), callback);
+		localState.fetch(this.topic(predicate), callback);
 	}
 
 	watch(predicates, callback) {
