@@ -1,46 +1,63 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useReducer, useCallback, useRef, useEffect } from "react";
+// import connection from "./data/connect";
 import "./index.css";
-import graph from "./graph";
+import { publicKey } from "./data/crypto";
+import user from "./data/graph";
 
-graph.start();
-graph.on("firstName", (value) => console.log("first name:", value));
-graph.on("lastName", (value) => console.log("last name:", value));
+const password = process.env.REACT_APP_PASSWORD;
+const email = process.env.REACT_APP_USER_EMAIL;
+user.login(email, password);
 
-const submitWrite = (predicate, value) => graph.write(predicate, value);
+const reducer = (oldState, newState) => {
+	return {
+		...oldState,
+		...newState,
+	};
+};
+const initialState = {
+	first_name: "",
+	last_name: "",
+	email: "",
+};
 
 const App = () => {
-	const [fname, setFirstName] = useState("");
-	const [lname, setLastName] = useState("");
+	const [state, dispatch] = useReducer(reducer, initialState);
+	const stateRef = useRef(initialState);
+	stateRef.current = state || initialState;
 
-	const fnameRef = useRef(null);
-	const lnameRef = useRef(null);
+	const typingFirstName = useCallback(({ target }) => user.write("first_name", target.value), []);
+	const typingLastName = useCallback(({ target }) => user.write("last_name", target.value), []);
+	const typingEmail = useCallback(({ target }) => user.write("email", target.value), []);
 
-	fnameRef.current = fname || "";
-	lnameRef.current = lname || "";
-
-	const submit = useCallback(() => {
-		submitWrite("firstName", fnameRef.current);
-		submitWrite("lastName", lnameRef.current);
-	}, []);
-	const typingFirstName = useCallback(({ target }) => setFirstName(target.value), []);
-	const typingLastName = useCallback(({ target }) => setLastName(target.value), []);
-	const doRead = useCallback(() => {
-		graph.read("firstName", ({ data }) => setFirstName(data.firstName));
-		graph.read("lastName", ({ data }) => setLastName(data.lastName));
+	useEffect(() => {
+		user.fetchAndWatch([
+			"first_name",
+			"last_name",
+			"email",
+		], ({ data }) => {
+			console.log("fetch watch", data);
+			dispatch(data);
+		});
 	}, []);
 
 	return (
 		<div className="App">
 			<div>
-				<label htmlFor="first_name">First Name</label>
-				<input name="first_name" onChange={typingFirstName} value={fnameRef.current} />
+				<label htmlFor="pubkey">Public Key: </label>
+				<input name="pubkey" className="monospace" value={publicKey() || ""} readOnly />
 			</div>
 			<div>
-				<label htmlFor="last_name">Last Name</label>
-				<input name="last_name" onChange={typingLastName} value={lnameRef.current} />
+				<label htmlFor="first_name">First Name: </label>
+				<input name="first_name" onChange={typingFirstName} value={stateRef.current.first_name || ""} />
 			</div>
-			<button onClick={submit}>Write</button>
-			<button onClick={doRead}>Read</button>
+			<div>
+				<label htmlFor="last_name">Last Name: </label>
+				<input name="last_name" onChange={typingLastName} value={stateRef.current.last_name || ""} />
+			</div>
+			<div>
+				<label htmlFor="email">Email: </label>
+				<input name="email" onChange={typingEmail} value={stateRef.current.email || ""} />
+			</div>
 		</div>
 	);
 }

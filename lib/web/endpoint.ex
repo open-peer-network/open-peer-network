@@ -1,7 +1,7 @@
-defmodule ElixirWebsocketWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :elixir_websocket
+defmodule OPNWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :opn
 
-  socket "/socket", ElixirWebsocketWeb.UserSocket,
+  socket "/socket", OPNWeb.UserSocket,
     websocket: true,
     longpoll: false
 end

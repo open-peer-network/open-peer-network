@@ -1,4 +1,9 @@
-# Elixir Websocket
+# Open Peer Network
+
+## Security Resources For Developers
+- https://smallstep.com/cli/
+- https://github.com/OWASP/CheatSheetSeries/blob/master/Index.md
+
 
 ## Setup
 

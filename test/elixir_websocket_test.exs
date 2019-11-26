@@ -1,8 +1,8 @@
-defmodule ElixirWebsocketTest do
+defmodule OPNTest do
   use ExUnit.Case
-  doctest ElixirWebsocket
+  doctest OPN
 
   test "greets the world" do
-    assert ElixirWebsocket.hello() == :world
+    assert OPN.hello() == :world
   end
 end

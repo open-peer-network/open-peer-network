@@ -1,4 +1,4 @@
-defmodule ElixirWebsocket.Application do
+defmodule OPN.Application do
   @moduledoc false
   use Application
 
@@ -7,22 +7,31 @@ defmodule ElixirWebsocket.Application do
       # {
       #   Registry,
       #   keys: :unique,
-      #   name: Registry.ElixirWebsocket
+      #   name: Registry.OPN
       # },
-      ElixirWebsocketWeb.Endpoint,
-      ElixirWebsocket.Caylir
+      # DeltaCrdt.CausalCrdt,
+      OPNWeb.Endpoint,
+      OPN.Caylir
     ]
+
+    # Use cryptographically strong seed for random number generator
+    <<i1::unsigned-integer-32, i2::unsigned-integer-32, i3::unsigned-integer-32>> =
+      :crypto.strong_rand_bytes(12)
+
+    :rand.seed(:exsplus, {i1, i2, i3})
+
+    # {public_key, secret_key} = Kcl.generate_key_pair()
 
     Supervisor.start_link(children,
       strategy: :one_for_one,
-      name: ElixirWebsocket.Supervisor
+      name: OPN.Supervisor
     )
   end
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    ElixirWebsocketWeb.Endpoint.config_change(changed, removed)
+    OPNWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 end

@@ -1,6 +1,6 @@
-defmodule ElixirWebsocket do
+defmodule OPN do
   @moduledoc """
-  ElixirWebsocket keeps the contexts that define your domain
+  OPN keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless
