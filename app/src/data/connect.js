@@ -1,4 +1,5 @@
-import { Socket } from "phoenix";
+import { Socket, Presence } from "phoenix";
+import SimplePeer from "simple-peer";
 // import getUUID from "uuid/v4";
 import values from "lodash.values";
 import isString from "lodash.isstring";
@@ -26,6 +27,7 @@ class SocketConnection {
 	topics = {};
 	fetchStack = [];
 	watchStack = [];
+	presences = {};
 
 	start(url) {
 		const socket = this.socket = new Socket(url);
@@ -172,6 +174,19 @@ class SocketConnection {
 			public_key: publicKey(),
 		});
 
+		const presence = new Presence(channel);
+		presence.onSync(() => p2pConnect(presence.state, null, channel));
+
+		// channel.on("presence_state", (state) => {
+		// 	this.presences = Presence.syncState(this.presences, state);
+		// 	// p2pConnect(this.presences, null, channel);
+		// });
+
+		// channel.on("presence_diff", (diff) => {
+		// 	this.presences = Presence.syncDiff(this.presences, diff);
+		// 	// p2pConnect(this.presences, null, channel);
+		// });
+
 		channel.join()
 			.receive("ok", successHandler ? () => successHandler(channel) : () => {
 				console.log(`success, joined topic '${topicString}'`);
@@ -182,6 +197,45 @@ class SocketConnection {
 
 		return channel;
 	}
+}
+
+function p2pConnect(peerState, offer, _channel) {
+	// const peersList = values(peers);
+	// const initiator = peersList[0] === publicKey();
+
+	return console.log("peer state", peerState);
+
+	const initiator = false;
+	const conn = new SimplePeer({
+		initiator,
+		trickle: false,
+	});
+
+	conn.on("error", (err) => console.log("error", err));
+
+	if (initiator) {
+
+		console.log("MAKE AN OFFER");
+		// If `initiator = true`, this will fire, giving us the offer,
+		// so we invoke the callback which sends the offer to the server.
+		// peersList.slice(1).forEach((peerId) => {
+		// 	conn.on("signal", (initialOffer) => channel.push(`offer:${peerId}`, initialOffer));
+		// });
+	} else if (offer) {
+		// Fires when `initiator = false`, offer will come to use from
+		// the server, so we can pass it to conn.signal().
+		console.log("GOT OFFER:", offer);
+		// conn.signal(JSON.parse(offer));
+	}
+
+	// conn.on("connect", () => {
+	// 	console.log("peer connected!");
+	// 	conn.send("Hello peer");
+	// });
+
+	// conn.on("data", (data) => {
+	// 	console.log("data: ", data);
+	// });
 }
 
 export default new SocketConnection();

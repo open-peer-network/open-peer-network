@@ -24,6 +24,10 @@ export class Node {
 	watchStack = [];
 	topicValues = {};
 
+	constructor(uuid) {
+		this.uuid = uuid;
+	}
+
 	topic(predicate) {
 		return this.uuid ? `${this.uuid}:${predicate}` : false;
 	}

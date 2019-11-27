@@ -33,7 +33,7 @@ collection_rules = %{
 config :opn, OPN.Scheduler,
   global: true,
   jobs: [
-    {"* * * * *", {OPN.Database, :collect_garbage, [collection_rules]}}
+    {"@weekly", {OPN.Database, :collect_garbage, [collection_rules]}}
   ]
 
 # Import environment specific config. This must remain at the bottom
