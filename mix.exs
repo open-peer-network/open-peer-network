@@ -43,7 +43,9 @@ defmodule OPN.MixProject do
       {:benchee, "~> 1.0", only: :dev},
       {:guardian, "~> 2.0"},
       {:delta_crdt, "~> 0.5.0"},
-      {:kcl, "~> 1.2"}
+      {:kcl, "~> 1.2"},
+      {:quantum, "~> 2.3"},
+      {:timex, "~> 3.0"}
     ]
   end
 end

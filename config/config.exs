@@ -17,11 +17,6 @@ config :opn, OPN.Caylir,
   json_decoder: {Jason, :decode!, []},
   json_encoder: {Jason, :encode!, []}
 
-# Use `mix guardian.gen.secret` to get a new secret
-config :opn, OPN.Guardian,
-  issuer: "opn",
-  secret_key: "oa7gkgNtpOGiiwHJgArd2DYaT0AiDNW5YHVLyQWm28ATQcOGFj2fPHCC76Q4i6tG"
-
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -29,6 +24,17 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+collection_rules = %{
+  :unread_data_ttl => "@weekly",
+  :absent_user_ttl => "@weekly"
+}
+
+config :opn, OPN.Scheduler,
+  global: true,
+  jobs: [
+    {"* * * * *", {OPN.Database, :collect_garbage, [collection_rules]}}
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

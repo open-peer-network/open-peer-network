@@ -3,6 +3,8 @@ defmodule OPN.Application do
   use Application
 
   def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
     children = [
       # {
       #   Registry,
@@ -11,6 +13,7 @@ defmodule OPN.Application do
       # },
       # DeltaCrdt.CausalCrdt,
       OPNWeb.Endpoint,
+      OPN.Scheduler,
       OPN.Caylir
     ]
 
