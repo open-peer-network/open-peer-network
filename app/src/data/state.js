@@ -6,10 +6,10 @@ class LocalState {
         connection.fetch(topic, callback);
     }
 
-    watch(topics, callback) {
-        [].concat(topics).forEach((topic) => {
-            connection.watch(topic, callback);
-        });
+    watch(topic, callback) {
+        connection.watch(topic, callback);
+        // [].concat(topics).forEach((topic) => {
+        // });
     }
 }
 

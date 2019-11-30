@@ -1,7 +1,9 @@
 defmodule OPNWeb.UserSocket do
   use Phoenix.Socket
 
-  channel("*", OPNWeb.TopicAll)
+  channel("none", OPNWeb.TopicNone)
+  channel("solo:*", OPNWeb.TopicSolo)
+  channel("sp:*", OPNWeb.TopicSP)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -19,7 +21,7 @@ defmodule OPNWeb.UserSocket do
     {:ok, assign(socket, :user_id, UUID.uuid4())}
   end
 
-  def id(socket), do: "session:#{socket.assigns.user_id}"
+  def id(socket), do: socket.assigns.user_id
 
   # Socket id's are topics that identify all sockets for a given user
   # to broadcast a "disconnect" event and terminate

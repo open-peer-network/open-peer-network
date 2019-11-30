@@ -1,7 +1,7 @@
 import React, { useReducer, useCallback, useRef, useEffect } from "react";
 // import connection from "./data/connect";
 import "./index.css";
-import { publicKey } from "./data/crypto";
+import { getPublicKey } from "./data/crypto";
 import user, { Node } from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
@@ -47,7 +47,7 @@ const App = () => {
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={publicKey() || ""} readOnly />
+				<input name="pubkey" className="monospace" value={getPublicKey() || ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>
