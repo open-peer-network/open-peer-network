@@ -49,10 +49,14 @@ defmodule OPNWeb.TopicSP do
   end
 
   def handle_in("fetch", _payload, socket) do
+    ["sp", subj, pred] = String.split(socket.topic, ":")
     data = Util.get_data(socket.topic)
-    IO.puts("!!!DATA!!! #{data}")
     if data != false do
-      {msg, state} = Util.encrypt(socket, Jason.encode!(data))
+      {msg, state} = Util.encrypt(socket, Jason.encode!(%{
+        "data" => %{
+          pred => data,
+        },
+      }))
 
       push(socket, "fetch response", %{
         "box" => Base.encode64(msg),
@@ -61,7 +65,6 @@ defmodule OPNWeb.TopicSP do
 
       {:noreply, socket}
     else
-      ["sp", subj, pred] = String.split(socket.topic, ":")
       case Database.query(%{"s" => subj, "p" => [pred]}) do
         {:ok, data} ->
           {msg, state} = Util.encrypt(socket, Jason.encode!(data))
