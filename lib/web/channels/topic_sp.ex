@@ -48,24 +48,36 @@ defmodule OPNWeb.TopicSP do
     {:noreply, socket}
   end
 
-  def handle_in("fetch", _, socket) do
-    ["sp", subj, pred] = String.split(socket.topic, ":")
+  def handle_in("fetch", _payload, socket) do
+    data = Util.get_data(socket.topic)
+    IO.puts("!!!DATA!!! #{data}")
+    if data != false do
+      {msg, state} = Util.encrypt(socket, Jason.encode!(data))
 
-    case Database.query(%{"s" => subj, "p" => [pred]}) do
-      {:ok, data} ->
-        {msg, state} = Util.encrypt(socket, Jason.encode!(data))
+      push(socket, "fetch response", %{
+        "box" => Base.encode64(msg),
+        "nonce" => Base.encode64(state.previous_nonce)
+      })
 
-        push(socket, "fetch response", %{
-          "box" => Base.encode64(msg),
-          "nonce" => Base.encode64(state.previous_nonce)
-        })
+      {:noreply, socket}
+    else
+      ["sp", subj, pred] = String.split(socket.topic, ":")
+      case Database.query(%{"s" => subj, "p" => [pred]}) do
+        {:ok, data} ->
+          {msg, state} = Util.encrypt(socket, Jason.encode!(data))
 
-        {:noreply, socket}
+          push(socket, "fetch response", %{
+            "box" => Base.encode64(msg),
+            "nonce" => Base.encode64(state.previous_nonce)
+          })
 
-      {:error, reason} ->
-        push(socket, "fetch response", %{"error" => reason})
-        "query failed: #{inspect(reason)}" |> IO.puts()
-        {:noreply, socket}
+          {:noreply, socket}
+
+        {:error, reason} ->
+          push(socket, "fetch response", %{"error" => reason})
+          "query failed: #{inspect(reason)}" |> IO.puts()
+          {:noreply, socket}
+      end
     end
   end
 

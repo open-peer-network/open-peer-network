@@ -3,6 +3,13 @@ defmodule OPN.Util do
     lookedup |> List.first() |> Tuple.to_list() |> Enum.at(1)
   end
 
+  def get_data(lookedup) do
+    case :ets.lookup(:data, lookedup) do
+      [] -> false
+      result -> result |> unpack_ets()
+    end
+  end
+
   def get_secret_key() do
     :ets.lookup(:keys, :secret_key) |> unpack_ets()
   end
