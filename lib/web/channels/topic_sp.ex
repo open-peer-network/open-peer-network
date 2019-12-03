@@ -50,37 +50,38 @@ defmodule OPNWeb.TopicSP do
 
   def handle_in("fetch", _payload, socket) do
     ["sp", subj, pred] = String.split(socket.topic, ":")
-    data = Util.get_data(socket.topic)
-    if data != false do
-      {msg, state} = Util.encrypt(socket, Jason.encode!(%{
-        "data" => %{
-          pred => data,
-        },
-      }))
 
-      push(socket, "fetch response", %{
-        "box" => Base.encode64(msg),
-        "nonce" => Base.encode64(state.previous_nonce)
-      })
+    case Util.get_data(socket.topic) do
+      false ->
+        case Database.query(%{"s" => subj, "p" => [pred]}) do
+          {:ok, data} ->
+            {msg, state} = Util.encrypt(socket, Jason.encode!(data))
 
-      {:noreply, socket}
-    else
-      case Database.query(%{"s" => subj, "p" => [pred]}) do
-        {:ok, data} ->
-          {msg, state} = Util.encrypt(socket, Jason.encode!(data))
+            push(socket, "fetch response", %{
+              "box" => Base.encode64(msg),
+              "nonce" => Base.encode64(state.previous_nonce)
+            })
 
-          push(socket, "fetch response", %{
-            "box" => Base.encode64(msg),
-            "nonce" => Base.encode64(state.previous_nonce)
-          })
+            {:noreply, socket}
 
-          {:noreply, socket}
+          {:error, reason} ->
+            push(socket, "fetch response", %{"error" => reason})
+            "query failed: #{inspect(reason)}" |> IO.puts()
+            {:noreply, socket}
+        end
 
-        {:error, reason} ->
-          push(socket, "fetch response", %{"error" => reason})
-          "query failed: #{inspect(reason)}" |> IO.puts()
-          {:noreply, socket}
-      end
+      object ->
+        {msg, state} = Util.encrypt(socket, Jason.encode!(%{
+          "subject" => subj,
+          "data" => %{pred => object},
+        }))
+
+        push(socket, "fetch response", %{
+          "box" => Base.encode64(msg),
+          "nonce" => Base.encode64(state.previous_nonce)
+        })
+
+        {:noreply, socket}
     end
   end
 

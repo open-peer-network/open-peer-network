@@ -4,7 +4,7 @@ defmodule OPN.Util do
   end
 
   def get_data(lookedup) do
-    case :ets.lookup(:data, lookedup) do
+    case :ets.lookup(:sp, lookedup) do
       [] -> false
       result -> result |> unpack_ets()
     end
