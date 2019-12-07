@@ -49,6 +49,8 @@ defmodule OPNWeb.TopicSP do
   end
 
   def handle_in("fetch", _, socket) do
+    # "sp:" <> topic = socket.topic
+    # ["sp", subj, pred] = Util.decrypt_sk(socket, topic) |> String.split(":")
     ["sp", subj, pred] = String.split(socket.topic, ":")
 
     case Database.query(%{"s" => subj, "p" => [pred]}) do
@@ -69,8 +71,10 @@ defmodule OPNWeb.TopicSP do
     end
   end
 
-  def handle_in("write", %{"box" => box, "nonce" => nonce}, socket) do
-    case Jason.decode(Util.decrypt(socket, box, nonce)) do
+  # def handle_in("write", ciphertext, socket) do
+  def handle_in("write", %{"0" => ciphertext}, socket) do
+    # case Util.decrypt_sk(socket, ciphertext) |> Jason.decode() do
+    case Util.decrypt(socket, ciphertext) |> Jason.decode() do
       {:ok, %{"s" => s, "p" => p, "o" => o}}
       when is_binary(s) and is_binary(p) and is_binary(o) ->
         # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])

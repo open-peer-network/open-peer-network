@@ -1,4 +1,6 @@
 defmodule OPN.Util do
+  import Salty.Box.Curve25519xsalsa20poly1305, only: [easy: 4, open_easy: 4, noncebytes: 0]
+
   def unpack_ets(lookedup) do
     lookedup |> List.first() |> Tuple.to_list() |> Enum.at(1)
   end
@@ -23,7 +25,7 @@ defmodule OPN.Util do
   end
 
   def encrypt(public_key, data) do
-    Kcl.box(
+    easy(
       data,
       :crypto.strong_rand_bytes(24),
       get_secret_key(),
@@ -31,15 +33,18 @@ defmodule OPN.Util do
     )
   end
 
-  def decrypt(socket, box, nonce) when is_binary(box) and is_binary(nonce) do
-    {json, _state} =
-      Kcl.unbox(
-        Base.decode64!(box),
-        Base.decode64!(nonce),
-        get_secret_key(),
-        Base.decode64!(socket.assigns.public_key)
-      )
+  def decrypt(socket, ciphertext) when is_binary(ciphertext) do
+    nonce_size = noncebytes()
+    <<nonce::binary-size(nonce_size), box::binary>> = ciphertext
+    decrypt(socket, box, nonce)
+  end
 
-    json
+  defp decrypt(socket, box, nonce) when is_binary(box) and is_binary(nonce) do
+    open_easy(
+      box,
+      nonce,
+      get_secret_key(),
+      Base.decode64!(socket.assigns.public_key)
+    )
   end
 end

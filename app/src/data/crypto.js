@@ -66,36 +66,17 @@ export const concatUint8 = (...args) => {
 	return res;
 };
 
-export const asymmetric = {
-	encrypt: (plaintext, publicKey) => {
-		const nonce = getNonce();
-		return concatUint8(nonce, sodium.crypto_box_easy(plaintext, nonce, publicKey, getSecretKey()));
-	},
-	decrypt: (byteArray, publicKey) => {
-		if (byteArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
-			throw new Error("Can't decrypt invalid message, length too short");
-		}
-		const nonce = byteArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-		const ciphertext = byteArray.slice(sodium.crypto_secretbox_NONCEBYTES);
-		const plaintext = sodium.crypto_box_open_easy(ciphertext, nonce, publicKey, getSecretKey());
-
-		return sodium.to_string(plaintext);
-	},
+export const encrypt = (plaintext, publicKey) => {
+	const nonce = getNonce();
+	return concatUint8(nonce, sodium.crypto_box_easy(plaintext, nonce, publicKey, getSecretKey()));
 };
+export const decrypt = (byteArray, publicKey) => {
+	if (byteArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
+		throw new Error("Can't decrypt invalid message, length too short");
+	}
+	const nonce = byteArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+	const ciphertext = byteArray.slice(sodium.crypto_secretbox_NONCEBYTES);
+	const plaintext = sodium.crypto_box_open_easy(ciphertext, nonce, publicKey, getSecretKey());
 
-export const symmetric = {
-	encrypt: (plaintext, secretKey) => {
-		const nonce = getNonce();
-		return concatUint8(nonce, sodium.crypto_secretbox_easy(plaintext, nonce, secretKey));
-	},
-	decrypt: (byteArray, secretKey) => {
-		if (byteArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
-			throw new Error("Can't decrypt invalid message, length too short");
-		}
-		const nonce = byteArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-		const ciphertext = byteArray.slice(sodium.crypto_secretbox_NONCEBYTES);
-		const plaintext = sodium.crypto_secretbox_open_easy(ciphertext, nonce, secretKey);
-
-		return sodium.to_string(plaintext);
-	},
+	return plaintext;
 };

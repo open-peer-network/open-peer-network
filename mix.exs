@@ -44,6 +44,7 @@ defmodule OPN.MixProject do
       {:guardian, "~> 2.0"},
       {:delta_crdt, "~> 0.5.0"},
       {:kcl, "~> 1.2"},
+      {:salty, "~> 0.1.3", hex: :libsalty},
       {:quantum, "~> 2.3"},
       {:timex, "~> 3.0"}
     ]

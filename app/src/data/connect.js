@@ -181,6 +181,12 @@ class SocketConnection {
 		});
 	}
 
+	/**
+	 *
+	 * @param {import('./helpers').officialTopic} topic
+	 * @param {Function} successHandler
+	 * @param {Function} failureHandler
+	 */
 	_newChannel(topic, successHandler, failureHandler) {
 		errOut(!validTopic(topic), "newChannel() received invalid topic");
 		errOut(!["function", "undefined"].includes(typeof successHandler), "newChannel() received invalid success handler");
