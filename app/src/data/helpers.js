@@ -40,7 +40,7 @@ export const err = (str) => {
     throw new Error(str);
 };
 
-export function officialTopic(opts) {
+export function officialTopic(opts) { debugger;
     const self = {
         [Symbol.toStringTag]: "Topic"
     };
@@ -57,14 +57,20 @@ export function officialTopic(opts) {
         if (subject && predicate) {
             subj = subject;
             pred = predicate;
+            return;
         }
         if (publicKey) {
             subj = null;
             pred = null;
             pubKey = publicKey;
+            return;
+        }
+        else {
+            console.error("Invalid opts received for officialTopic()", opts);
+            throw new Error("Invalid opts received for officialTopic()");
         }
     };
-    self.set(opts);
+    if (!none) self.set(opts);
 
     Object.defineProperty(self, "value", {
         get: function() {

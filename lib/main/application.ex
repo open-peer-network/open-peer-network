@@ -16,11 +16,14 @@ defmodule OPN.Application do
 
     :rand.seed(:exsplus, {i1, i2, i3})
 
+    :ets.new(:users, [:set, :public, :named_table])
+
     {secret_key, public_key} = Kcl.generate_key_pair()
     :ets.new(:keys, [:named_table])
-    :ets.new(:users, [:set, :public, :named_table])
     :ets.insert(:keys, {:secret_key, secret_key})
-    :ets.insert(:keys, {:public_key, Base.encode64(public_key)})
+    :ets.insert(:keys, {:public_key, public_key})
+    :ets.insert(:keys, {:secret_key_base64, Base.encode64(secret_key)})
+    :ets.insert(:keys, {:public_key_base64, Base.encode64(public_key)})
 
     Supervisor.start_link(children,
       strategy: :one_for_one,

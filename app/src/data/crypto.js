@@ -1,22 +1,24 @@
 import buffer from "scrypt-js/thirdparty/buffer";
-import sodium from "libsodium-wrappers";
+import * as sodium from "libsodium-wrappers";
 import { syncScrypt } from "scrypt-js";
 import { toBase64 } from "./encoding";
 // import base62 from "base62/lib/ascii";
 // import ab2str from "arraybuffer-to-string";
-
 // export { ab2str };
 
-let SESSION_KEYS;
+console.log(sodium);
+console.log(sodium.ready);
 
-(async() => {
-	try {
-		await sodium.ready;
-		SESSION_KEYS = generateKeyPair();
-	} catch (err) {
-		console.log(err);
-	}
-})();
+let SESSION_KEYS = {};
+
+export const ready = async (callback) => {
+	sodium.ready.then(callback);
+};
+sodium.ready.then(() => {
+	SESSION_KEYS = generateKeyPair();
+	console.log(SESSION_KEYS);
+});
+
 
 export const getNonce = () => sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
 

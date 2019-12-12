@@ -1,13 +1,16 @@
 import React, { useReducer, useCallback, useRef, useEffect } from "react";
 // import connection from "./data/connect";
 import "./index.css";
-import { getPublicKey } from "./data/crypto";
+import { ready, getPublicKey } from "./data/crypto";
 import user, { Node } from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
-// eslint-disable-next-line no-restricted-globals
-user.login(email, password + (location.hash ? location.hash : ''));
+
+ready(() => {
+	// eslint-disable-next-line no-restricted-globals
+	user.login(email, password + (location.hash ? location.hash : ''));
+});
 
 const node = new Node('node1');
 

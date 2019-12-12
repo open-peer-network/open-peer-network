@@ -11,7 +11,7 @@ defmodule OPNWeb.TopicSolo do
   end
 
   def handle_info(:after_join, socket) do
-    push(socket, "connect", %{"public_key" => Util.get_public_key()})
+    push(socket, "connect", %{"public_key" => Util.get_public_key(:base64)})
     {:noreply, socket}
   end
 

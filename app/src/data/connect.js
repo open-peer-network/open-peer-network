@@ -4,7 +4,13 @@ import isFunction from "lodash.isfunction";
 import values from "lodash.values";
 import keys from "lodash.keys";
 import {
+	toBase64,
+} from "./encoding";
+import {
 	getPublicKey,
+	generateKeyPair,
+	storeKeys,
+	ready,
 } from "./crypto";
 import {
 	errOut,
@@ -51,9 +57,14 @@ class SocketConnection {
 			}
 		};
 		socket.onMessage(firstResponseHandler);
-		socket.onOpen(() => {
+		socket.onOpen(() => ready(() => {
+			let pubKey = getPublicKey();
+			if (!pubKey) {
+				storeKeys(generateKeyPair());
+				pubKey = getPublicKey();
+			}
 			socket.noneChannel = this._newChannel(officialTopic("none"));
-			socket.soloChannel = this._newChannel(officialTopic({ publicKey: getPublicKey() }));
+			socket.soloChannel = this._newChannel(officialTopic({ publicKey: toBase64(getPublicKey()) }));
 			socket.soloChannel.on("message", (msg) => {
 				console.log("message", msg);
 			});
@@ -63,14 +74,14 @@ class SocketConnection {
 						message: "webrtc_answer",
 						payload: answer,
 						recipients: [sender],
-						sender: getPublicKey(),
+						sender: toBase64(getPublicKey()),
 					});
 				});
 			});
 			socket.soloChannel.on("webrtc_answer", ({ payload, sender }) => {
 				this.connectedPeers[sender].signal(payload);
 			})
-		});
+		}));
 		socket.onClose(() => delete this.peerKey);
 		socket.connect();
 	}
@@ -94,7 +105,7 @@ class SocketConnection {
 
 	decrypt(responce) {
 		if (!this.peerKey) throw new Error("decrypt() called but peerKey unavailable.");
-		return decrypt(responce.box, responce.nonce, this.peerKey);
+		return decrypt(responce, this.peerKey);
 	}
 
 	fetch(topic, callback) {
@@ -115,7 +126,8 @@ class SocketConnection {
 		errOut(!validTopic(topic), "connection._fetch() received invalid topic");
 		this.useTopic(topic).then((channel) => {
 			const ref = channel.on("fetch response", (data) => {
-				callback(this.decrypt(data));
+				if (data && data.data) callback(this.decrypt(data.data));
+				else console.error("received invalid payload for 'fetch response'", data);
 				channel.off("fetch response", ref);
 			});
 			channel.push("fetch");
@@ -193,7 +205,7 @@ class SocketConnection {
 		errOut(!["function", "undefined"].includes(typeof failureHandler), "newChannel() received invalid failure handler");
 		errOut(!this.socket, "socket not initialized");
 
-		const public_key = getPublicKey();
+		const public_key = toBase64(getPublicKey());
 
 		let channel;
 		if (/^solo:/.test(topic.value)) {
@@ -243,7 +255,7 @@ class SocketConnection {
 				message: "webrtc_offer",
 				payload: offer,
 				recipients: [peerKey],
-				sender: getPublicKey(),
+				sender: toBase64(getPublicKey()),
 			});
 		});
 	}

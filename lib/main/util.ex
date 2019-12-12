@@ -1,17 +1,14 @@
 defmodule OPN.Util do
-  import Salty.Box.Curve25519xsalsa20poly1305, only: [easy: 4, open_easy: 4, noncebytes: 0]
 
   def unpack_ets(lookedup) do
     lookedup |> List.first() |> Tuple.to_list() |> Enum.at(1)
   end
 
-  def get_secret_key() do
-    :ets.lookup(:keys, :secret_key) |> unpack_ets()
-  end
+  def get_secret_key(), do: :ets.lookup(:keys, :secret_key) |> unpack_ets()
+  def get_secret_key(:base64), do: :ets.lookup(:keys, :secret_key_base64) |> unpack_ets()
 
-  def get_public_key() do
-    :ets.lookup(:keys, :public_key) |> unpack_ets()
-  end
+  def get_public_key(), do: :ets.lookup(:keys, :public_key) |> unpack_ets()
+  def get_public_key(:base64), do: :ets.lookup(:keys, :public_key_base64) |> unpack_ets()
 
   def get_users_on_topic(topic) do
     case :ets.lookup(:users, topic) do
@@ -25,22 +22,24 @@ defmodule OPN.Util do
   end
 
   def encrypt(public_key, data) do
-    easy(
+    nonce = :crypto.strong_rand_bytes(24)
+    {:ok, box} = Salty.Box.primitive().easy(
       data,
-      :crypto.strong_rand_bytes(24),
+      nonce,
       get_secret_key(),
       Base.decode64!(public_key)
     )
+    nonce <> box
   end
 
   def decrypt(socket, ciphertext) when is_binary(ciphertext) do
-    nonce_size = noncebytes()
+    nonce_size = Salty.Box.primitive().noncebytes()
     <<nonce::binary-size(nonce_size), box::binary>> = ciphertext
     decrypt(socket, box, nonce)
   end
 
   defp decrypt(socket, box, nonce) when is_binary(box) and is_binary(nonce) do
-    open_easy(
+    Salty.Box.primitive().open_easy(
       box,
       nonce,
       get_secret_key(),

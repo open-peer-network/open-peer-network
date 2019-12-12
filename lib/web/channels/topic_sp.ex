@@ -36,7 +36,7 @@ defmodule OPNWeb.TopicSP do
     users = Util.get_users_on_topic(socket.topic)
     "!!! FOUND USERS ON TOPIC #{socket.topic}: #{inspect(users)}" |> IO.puts()
 
-    push(socket, "connect", %{"public_key" => Util.get_public_key(), "peers" => users})
+    push(socket, "connect", %{"public_key" => Util.get_public_key(:base64), "peers" => users})
 
     Presence.track(socket, socket.assigns.public_key, %{})
     push(socket, "presence_state", Presence.list(socket.topic))
@@ -55,12 +55,9 @@ defmodule OPNWeb.TopicSP do
 
     case Database.query(%{"s" => subj, "p" => [pred]}) do
       {:ok, data} ->
-        {msg, state} = Util.encrypt(socket, Jason.encode!(data))
+        ciphertext = Util.encrypt(socket, Jason.encode!(data))
 
-        push(socket, "fetch response", %{
-          "box" => Base.encode64(msg),
-          "nonce" => Base.encode64(state.previous_nonce)
-        })
+        push(socket, "fetch response", %{"data" => Base.encode64(ciphertext)})
 
         {:noreply, socket}
 
