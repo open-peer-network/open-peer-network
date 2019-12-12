@@ -5,6 +5,7 @@ import values from "lodash.values";
 import keys from "lodash.keys";
 import {
 	toBase64,
+	fromBase64,
 } from "./encoding";
 import {
 	getPublicKey,
@@ -43,7 +44,7 @@ class SocketConnection {
 		const firstResponseHandler = ({ payload }) => {
 			if (payload.public_key) {
 				// Make trusted.
-				this.peerKey = payload.public_key;
+				this.peerKey = fromBase64(payload.public_key);
 
 				console.log("Received public key for peer:", this.peerKey);
 				// Remove this listener.
@@ -100,12 +101,23 @@ class SocketConnection {
 
 	encrypt(string) {
 		if (!this.peerKey) throw new Error("encrypt() called but peerKey unavailable.");
+		debugger;
 		return encrypt(string, this.peerKey);
 	}
 
-	decrypt(responce) {
+	decrypt(data) {
 		if (!this.peerKey) throw new Error("decrypt() called but peerKey unavailable.");
-		return decrypt(responce, this.peerKey);
+		if (data && data.data && data.data.length) {
+			try {
+				const json = decrypt(data.data, this.peerKey);
+				return JSON.parse(json);
+			} catch (err) {
+				console.error("error decrypting and parsing response:", data);
+			}
+		} else {
+			console.error("received invalid payload for 'fetch response'", data);
+		}
+		return { data: null };
 	}
 
 	fetch(topic, callback) {
@@ -125,9 +137,8 @@ class SocketConnection {
 	_fetch(topic, callback) {
 		errOut(!validTopic(topic), "connection._fetch() received invalid topic");
 		this.useTopic(topic).then((channel) => {
-			const ref = channel.on("fetch response", (data) => {
-				if (data && data.data) callback(this.decrypt(data.data));
-				else console.error("received invalid payload for 'fetch response'", data);
+			const ref = channel.on("fetch response", (response) => {
+				callback(this.decrypt(response));
 				channel.off("fetch response", ref);
 			});
 			channel.push("fetch");
@@ -170,6 +181,7 @@ class SocketConnection {
 	}
 
 	write(topic, value) {
+		debugger;
 		errOut(!validTopic(topic), "connection.write() received invalid topic");
 		if (!this.socket || !this.peerKey) {
 			console.log(this.socket);
@@ -177,7 +189,7 @@ class SocketConnection {
 			return;
 		}
 		this.useTopic(topic).then((chan) => {
-			chan.push("write", this.encrypt(value));
+			chan.push("write", this.encrypt(JSON.stringify(value)));
 		});
 	}
 

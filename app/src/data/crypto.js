@@ -1,13 +1,10 @@
 import buffer from "scrypt-js/thirdparty/buffer";
 import * as sodium from "libsodium-wrappers";
 import { syncScrypt } from "scrypt-js";
-import { toBase64 } from "./encoding";
+import { toBase64, fromBase64 } from "./encoding";
 // import base62 from "base62/lib/ascii";
 // import ab2str from "arraybuffer-to-string";
 // export { ab2str };
-
-console.log(sodium);
-console.log(sodium.ready);
 
 let SESSION_KEYS = {};
 
@@ -16,7 +13,6 @@ export const ready = async (callback) => {
 };
 sodium.ready.then(() => {
 	SESSION_KEYS = generateKeyPair();
-	console.log(SESSION_KEYS);
 });
 
 
@@ -70,9 +66,11 @@ export const concatUint8 = (...args) => {
 
 export const encrypt = (plaintext, publicKey) => {
 	const nonce = getNonce();
-	return concatUint8(nonce, sodium.crypto_box_easy(plaintext, nonce, publicKey, getSecretKey()));
+	return toBase64(concatUint8(nonce, sodium.crypto_box_easy(plaintext, nonce, publicKey, getSecretKey())));
 };
+
 export const decrypt = (byteArray, publicKey) => {
+	byteArray = fromBase64(byteArray);
 	if (byteArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
 		throw new Error("Can't decrypt invalid message, length too short");
 	}
@@ -80,5 +78,5 @@ export const decrypt = (byteArray, publicKey) => {
 	const ciphertext = byteArray.slice(sodium.crypto_secretbox_NONCEBYTES);
 	const plaintext = sodium.crypto_box_open_easy(ciphertext, nonce, publicKey, getSecretKey());
 
-	return plaintext;
+	return sodium.to_string(plaintext);
 };

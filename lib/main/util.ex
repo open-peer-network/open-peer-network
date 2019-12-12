@@ -26,9 +26,12 @@ defmodule OPN.Util do
     {:ok, box} = Salty.Box.primitive().easy(
       data,
       nonce,
-      get_secret_key(),
-      Base.decode64!(public_key)
+      Base.decode64!(public_key),
+      get_secret_key()
     )
+    IO.puts("nonce: #{inspect(nonce)}")
+    IO.puts("cipher: #{inspect(box)}")
+
     nonce <> box
   end
 

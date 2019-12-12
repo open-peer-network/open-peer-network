@@ -40,7 +40,7 @@ export const err = (str) => {
     throw new Error(str);
 };
 
-export function officialTopic(opts) { debugger;
+export function officialTopic(opts) {
     const self = {
         [Symbol.toStringTag]: "Topic"
     };

@@ -2,6 +2,7 @@ import React, { useReducer, useCallback, useRef, useEffect } from "react";
 // import connection from "./data/connect";
 import "./index.css";
 import { ready, getPublicKey } from "./data/crypto";
+import { toBase64 } from "./data/encoding";
 import user, { Node } from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
@@ -50,7 +51,7 @@ const App = () => {
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={getPublicKey() || ""} readOnly />
+				<input name="pubkey" className="monospace" value={getPublicKey() ? toBase64(getPublicKey()) : ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>
