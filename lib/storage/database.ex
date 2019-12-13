@@ -9,24 +9,11 @@ defmodule OPN.Database do
 
   defp spo(s, p, o), do: %{"subject" => s, "predicate" => p, "object" => o}
 
-  def query(%{"s" => subj, "p" => pred}) do
-    case Caylir.query(~s"""
-           var result = {};
-           var user = g.V(#{Jason.encode!(subj)});
-           var predicates = #{Jason.encode!(pred)};
-
-           predicates.map(function(predicate) {
-             result[predicate] = user.out(predicate).toValue();
-           });
-
-           g.emit(result);
-         """) do
-      [data] ->
-        {:ok, %{"subject" => subj, "data" => data}}
-
-      resp ->
-        IO.puts("query failed miserably: #{inspect(resp)}")
-        {:error, resp}
+  def get_one(subj, pred) do
+    case Caylir.query("g.emit(g.V('#{subj}').out('#{pred}').toValue())") do
+      [object] -> {:ok, object}
+      {:error, reason} -> {:error, reason}
+      other -> IO.puts("!?!?!? #{inspect(other)}")
     end
   end
 
@@ -55,3 +42,24 @@ defmodule OPN.Database do
     IO.puts("absent: #{inspect(absent_ttl)}")
   end
 end
+
+# def get_one(%{"s" => subj, "p" => pred}) do
+#   case Caylir.query(~s"""
+#          var result = {};
+#          var user = g.V(#{Jason.encode!(subj)});
+#          var predicates = #{Jason.encode!(pred)};
+
+#          predicates.map(function(predicate) {
+#            result[predicate] = user.out(predicate).toValue();
+#          });
+
+#          g.emit(result);
+#        """) do
+#     [object] ->
+#       {:ok, object}
+
+#     resp ->
+#       IO.puts("query failed miserably: #{inspect(resp)}")
+#       {:error, resp}
+#   end
+# end

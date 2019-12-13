@@ -117,7 +117,7 @@ export class Node {
 			"node.write() arg 1 and 2 must be of type String");
 
 		if (this.subject) {
-			connection.write(this.topic(prop), triple(this.subject, prop, value));
+			connection.write(this.topic(prop), value);
 		} else {
 			err("node.write() called but no UUID found");
 		}

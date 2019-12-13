@@ -18,8 +18,8 @@ defmodule OPN.Application do
 
     :ets.new(:users, [:set, :public, :named_table])
 
-    {secret_key, public_key} = Kcl.generate_key_pair()
     :ets.new(:keys, [:named_table])
+    {:ok, public_key, secret_key} = Salty.Box.primitive().keypair()
     :ets.insert(:keys, {:secret_key, secret_key})
     :ets.insert(:keys, {:public_key, public_key})
     :ets.insert(:keys, {:secret_key_base64, Base.encode64(secret_key)})

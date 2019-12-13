@@ -1,7 +1,7 @@
 defmodule OPNWeb.TopicSP do
   use Phoenix.Channel
   import Phoenix.Socket, only: [assign: 2]
-  alias OPN.Presence
+  # alias OPN.Presence
   alias OPN.Database
   alias OPN.Util
 
@@ -20,6 +20,8 @@ defmodule OPNWeb.TopicSP do
 
   def init(state), do: {:ok, state}
 
+  def endpoint_broadcast!(socket, action, payload), do: OPNWeb.Endpoint.broadcast!(socket, action, payload)
+
   def join(_topic, %{"public_key" => public_key}, socket) do
     send(self(), :after_join)
     {:ok, assign(socket, %{public_key: public_key})}
@@ -34,16 +36,16 @@ defmodule OPNWeb.TopicSP do
 
   def handle_info(:after_join, socket) do
     users = Util.get_users_on_topic(socket.topic)
-    "!!! FOUND USERS ON TOPIC #{socket.topic}: #{inspect(users)}" |> IO.puts()
+    # "!!! FOUND USERS ON TOPIC #{socket.topic}: #{inspect(users)}" |> IO.puts()
 
     push(socket, "connect", %{"public_key" => Util.get_public_key(:base64), "peers" => users})
 
-    Presence.track(socket, socket.assigns.public_key, %{})
-    push(socket, "presence_state", Presence.list(socket.topic))
+    # Presence.track(socket, socket.assigns.public_key, %{})
+    # push(socket, "presence_state", Presence.list(socket.topic))
 
-    if !Enum.member?(users, socket.assigns.public_key) do
-      :ets.insert(:users, {socket.topic, [socket.assigns.public_key | users]})
-    end
+    # if !Enum.member?(users, socket.assigns.public_key) do
+    #   :ets.insert(:users, {socket.topic, [socket.assigns.public_key | users]})
+    # end
 
     {:noreply, socket}
   end
@@ -53,11 +55,11 @@ defmodule OPNWeb.TopicSP do
     # ["sp", subj, pred] = Util.decrypt_sk(socket, topic) |> String.split(":")
     ["sp", subj, pred] = String.split(socket.topic, ":")
 
-    case Database.query(%{"s" => subj, "p" => [pred]}) do
-      {:ok, data} ->
-        ciphertext = Util.encrypt(socket, Jason.encode!(data))
-
-        push(socket, "fetch response", %{"data" => Base.encode64(ciphertext)})
+    case Database.get_one(subj, pred) do
+      {:ok, plaintext_obj} ->
+        push(socket, "fetch response", %{
+          "ct" => socket |> Util.encrypt(plaintext_obj) |> Base.encode64()
+        })
 
         {:noreply, socket}
 
@@ -65,20 +67,25 @@ defmodule OPNWeb.TopicSP do
         push(socket, "fetch response", %{"error" => reason})
         "query failed: #{inspect(reason)}" |> IO.puts()
         {:noreply, socket}
+
+      other ->
+        IO.puts("%%%%%% #{inspect(other)}")
+        {:noreply, socket}
     end
   end
 
   # def handle_in("write", ciphertext, socket) do
-  def handle_in("write", %{"0" => ciphertext}, socket) do
-    # case Util.decrypt_sk(socket, ciphertext) |> Jason.decode() do
-    case Util.decrypt(socket, ciphertext) |> Jason.decode() do
-      {:ok, %{"s" => s, "p" => p, "o" => o}}
-      when is_binary(s) and is_binary(p) and is_binary(o) ->
-        # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
-        resp = Database.write(s, p, o)
-        "write: #{inspect(resp)}" |> IO.puts()
+  def handle_in("write", %{"ct" => ciphertext}, socket) do
+    ["sp", subj, pred] = socket.topic |> String.split(":")
 
-        resp = OPNWeb.Endpoint.broadcast!("sp:#{s}:#{p}", "value", %{"data" => %{p => o}})
+    case Util.decrypt(socket, ciphertext) do
+      {:ok, plaintext_obj} ->
+        IO.puts("!!!!!!!! write received #{inspect(plaintext_obj)}")
+
+        # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
+        :ok = Database.write(subj, pred, plaintext_obj)
+
+        resp = endpoint_broadcast!(socket.topic, "value", %{"ct" => Util.encrypt(socket, plaintext_obj)})
         "broadcast returned: #{inspect(resp)}" |> IO.puts()
 
         {:noreply, socket}

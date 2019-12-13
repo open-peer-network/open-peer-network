@@ -41,9 +41,9 @@ const App = () => {
 			"first_name",
 			"last_name",
 			"email",
-		], ({ data }) => {
-			console.log("fetch watch", data);
-			dispatch(data);
+		], ({ predicate, object }) => {
+			console.log("fetch watch", object);
+			dispatch({ [predicate]: object });
 		});
 	}, []);
 

@@ -105,19 +105,18 @@ class SocketConnection {
 		return encrypt(string, this.peerKey);
 	}
 
-	decrypt(data) {
+	decrypt(ciphertext) {
 		if (!this.peerKey) throw new Error("decrypt() called but peerKey unavailable.");
-		if (data && data.data && data.data.length) {
+		if (ciphertext && ciphertext.length) {
 			try {
-				const json = decrypt(data.data, this.peerKey);
-				return JSON.parse(json);
+				return decrypt(ciphertext, this.peerKey);
 			} catch (err) {
-				console.error("error decrypting and parsing response:", data);
+				console.error("error decrypting response:", ciphertext);
 			}
 		} else {
-			console.error("received invalid payload for 'fetch response'", data);
+			console.error("decrypt received invalid ciphertext:", ciphertext);
 		}
-		return { data: null };
+		return null;
 	}
 
 	fetch(topic, callback) {
@@ -138,7 +137,14 @@ class SocketConnection {
 		errOut(!validTopic(topic), "connection._fetch() received invalid topic");
 		this.useTopic(topic).then((channel) => {
 			const ref = channel.on("fetch response", (response) => {
-				callback(this.decrypt(response));
+				if (response && response.ct && response.ct.length) {
+					debugger;
+					callback({
+						object: this.decrypt(response.ct),
+					});
+				} else {
+					console.error("received invalid payload for 'fetch response':", response);
+				}
 				channel.off("fetch response", ref);
 			});
 			channel.push("fetch");
@@ -189,7 +195,7 @@ class SocketConnection {
 			return;
 		}
 		this.useTopic(topic).then((chan) => {
-			chan.push("write", this.encrypt(JSON.stringify(value)));
+			chan.push("write", { ct: this.encrypt(value) });
 		});
 	}
 
@@ -244,7 +250,7 @@ class SocketConnection {
 
 	usePresence(channel) {
 		new Presence(channel);
-		const ourKey = getPublicKey();
+		const ourKey = toBase64(getPublicKey());
 
 		channel.on("presence_state", (state) => {
 			const newState = Presence.syncState(this.presenceState, state);
