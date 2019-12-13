@@ -3,7 +3,6 @@ import localState from "./state";
 import {
 	err,
 	errOut,
-	triple,
 	notStrings,
 	validateCredentials,
 	officialTopic,

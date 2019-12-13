@@ -57,9 +57,8 @@ defmodule OPNWeb.TopicSP do
 
     case Database.get_one(subj, pred) do
       {:ok, plaintext_obj} ->
-        push(socket, "fetch response", %{
-          "ct" => socket |> Util.encrypt(plaintext_obj) |> Base.encode64()
-        })
+        {:ok, ciphertext} = socket |> Util.encrypt(plaintext_obj)
+        push(socket, "fetch response", %{"ct" => Util.safe_encode64(ciphertext)})
 
         {:noreply, socket}
 

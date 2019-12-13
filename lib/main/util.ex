@@ -1,7 +1,38 @@
 defmodule OPN.Util do
+  alias Salty.Box
 
   def unpack_ets(lookedup) do
     lookedup |> List.first() |> Tuple.to_list() |> Enum.at(1)
+  end
+
+  def initialize_keys() do
+    :ets.new(:keys, [:named_table])
+    {:ok, public_key, secret_key} = Box.primitive().keypair()
+    :ets.insert(:keys, {:secret_key, secret_key})
+    :ets.insert(:keys, {:public_key, public_key})
+    :ets.insert(:keys, {:secret_key_base64, safe_encode64(secret_key)})
+    :ets.insert(:keys, {:public_key_base64, safe_encode64(public_key)})
+    :ok
+  end
+
+  def safe_decode64(bytes) do
+    case String.match?(bytes, ~r/^base64:/) do
+      true ->
+        "base64:" <> bytes = bytes
+        case Base.decode64(bytes) do
+          {:ok, string} -> string
+          {:error} -> nil
+        end
+      false ->
+        nil
+    end
+  end
+
+  def safe_encode64(bytes) do
+    case String.match?(bytes, ~r/^base64:/) do
+      true -> bytes
+      false -> "base64:" <> Base.encode64(bytes)
+    end
   end
 
   def get_secret_key(), do: :ets.lookup(:keys, :secret_key) |> unpack_ets()
@@ -19,35 +50,32 @@ defmodule OPN.Util do
 
   def encrypt(%Phoenix.Socket{} = socket, data) when is_binary(data) do
     socket.assigns.public_key
-    |> Base.decode64!()
+    |> safe_decode64()
     |> encrypt(data)
   end
 
   def encrypt(public_key, plaintext) do
     nonce = :crypto.strong_rand_bytes(24)
-    {:ok, ciphertext} = Salty.Box.primitive().easy(
+    {:ok, ciphertext} = Box.primitive().easy(
       plaintext,
       nonce,
       public_key,
       get_secret_key()
     )
-    IO.puts("nonce: #{inspect(nonce)}")
-    IO.puts("ciphertext: #{inspect(ciphertext)}")
-
-    nonce <> ciphertext
+    {:ok, nonce <> ciphertext}
   end
 
   def decrypt(%Phoenix.Socket{} = socket, ciphertext) do
-    nonce_size = Salty.Box.primitive().noncebytes()
-    <<nonce::binary-size(nonce_size), ciphertext::binary>> = ciphertext |> Base.decode64!()
-
     socket.assigns.public_key
     |> Base.decode64!()
-    |> decrypt(ciphertext, nonce)
+    |> decrypt(ciphertext)
   end
 
-  defp decrypt(public_key, ciphertext, nonce) do
-    Salty.Box.primitive().open_easy(
+  def decrypt(public_key, ciphertext) do
+    nonce_size = Box.primitive().noncebytes()
+    <<nonce::binary-size(nonce_size), ciphertext::binary>> = ciphertext
+
+    Box.primitive().open_easy(
       ciphertext,
       nonce,
       public_key,

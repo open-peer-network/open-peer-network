@@ -6,8 +6,13 @@ defmodule OPNWeb.TopicNone do
   def init(state), do: {:ok, state}
 
   def join("none", %{"public_key" => pub_key}, socket) do
-    send(self(), :after_join)
-    {:ok, assign(socket, %{public_key: pub_key})}
+    case String.match?(pub_key, ~r/^base64:/) do
+      true ->
+        send(self(), :after_join)
+        {:ok, assign(socket, %{public_key: pub_key})}
+      false ->
+        {:error, "received invalid public key"}
+    end
   end
 
   def join(topic, payload, _socket) do
