@@ -14,8 +14,14 @@
 
 ### Setup and Launch Cayley Database
 
-1) [Install the Cayley database](https://github.com/cayleygraph/cayley/blob/master/docs/installation.md).
-   * You may have to [build from source](https://github.com/cayleygraph/cayley/blob/master/docs/contributing.md) as I did.
+1) Build the Cayley DB from source:
+   * `git clone https://github.com/cayleygraph/cayley`
+   * `cd cayley`
+   * `git checkout -b v0.8.x-dev_opn 862dca511c07c883fa1553dbc7ef1f97fa2904ec`
+   * `go mod download`
+   * `go get -u github.com/gobuffalo/packr/v2/packr2`
+   * `packr2` (If you can't find `packr2` in your path, try `~/go/bin/packr2`)
+   * `go build ./cmd/cayley`
 1) Make sure `cayley` is available from your path. You can use `which cayley` to check.
    * If it's not, move they cayley folder to your home directory and symlink to it from `/usr/local/bin`.
 1) Back in the current project directory, copy `cayley.yml.example` -> `cayley.yml`
