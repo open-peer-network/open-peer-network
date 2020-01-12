@@ -7,7 +7,8 @@ defmodule OPN.Application do
       OPN.Caylir,
       OPN.Scheduler,
       OPNWeb.Endpoint,
-      OPN.Presence
+      OPN.Presence,
+      OPN.SPDatabase
     ]
 
     # Use cryptographically strong seed for random number generator
@@ -19,7 +20,7 @@ defmodule OPN.Application do
     {secret_key, public_key} = Kcl.generate_key_pair()
     :ets.new(:keys, [:named_table])
     :ets.new(:users, [:set, :public, :named_table])
-    :ets.new(:sp, [:set, :public, :named_table])
+    # :ets.new(:sp, [:set, :public, :named_table])
     :ets.insert(:keys, {:secret_key, secret_key})
     :ets.insert(:keys, {:public_key, Base.encode64(public_key)})
 

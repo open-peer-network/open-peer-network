@@ -20,8 +20,12 @@ defmodule OPNWeb.TopicSP do
 
   def init(state), do: {:ok, state}
 
-  def join(_topic, %{"public_key" => public_key}, socket) do
+  def join(topic, %{"public_key" => public_key}, socket) do
+    "sp:" <> db_topic = topic
+    socket = assign(socket, db_topic: db_topic)
+
     send(self(), :after_join)
+
     {:ok, assign(socket, %{public_key: public_key})}
   end
 
@@ -33,8 +37,8 @@ defmodule OPNWeb.TopicSP do
   end
 
   def handle_info(:after_join, socket) do
-    users = Util.get_users_on_topic(socket.topic)
-    "!!! FOUND USERS ON TOPIC #{socket.topic}: #{inspect(users)}" |> IO.puts()
+    users = Util.get_users_on_topic(socket.assigns.db_topic)
+    "!!! FOUND USERS ON TOPIC #{socket.assigns.db_topic}: #{inspect(users)}" |> IO.puts()
 
     push(socket, "connect", %{"public_key" => Util.get_public_key(), "peers" => users})
 
@@ -42,16 +46,16 @@ defmodule OPNWeb.TopicSP do
     push(socket, "presence_state", Presence.list(socket.topic))
 
     if !Enum.member?(users, socket.assigns.public_key) do
-      :ets.insert(:users, {socket.topic, [socket.assigns.public_key | users]})
+      :ets.insert(:users, {socket.assigns.db_topic, [socket.assigns.public_key | users]})
     end
 
     {:noreply, socket}
   end
 
   def handle_in("fetch", _payload, socket) do
-    ["sp", subj, pred] = String.split(socket.topic, ":")
+    [subj, pred] = String.split(socket.assigns.db_topic, ":")
 
-    case Util.get_data(socket.topic) do
+    case Util.get_data(socket.assigns.db_topic) do
       false ->
         case Database.query(%{"s" => subj, "p" => [pred]}) do
           {:ok, data} ->
@@ -71,6 +75,7 @@ defmodule OPNWeb.TopicSP do
         end
 
       object ->
+        IO.puts "Found in :sp DB: #{IO.inspect(object)}"
         {msg, state} = Util.encrypt(socket, Jason.encode!(%{
           "subject" => subj,
           "data" => %{pred => object},
@@ -95,6 +100,8 @@ defmodule OPNWeb.TopicSP do
 
         resp = OPNWeb.Endpoint.broadcast!("sp:#{s}:#{p}", "value", %{"data" => %{p => o}})
         "broadcast returned: #{inspect(resp)}" |> IO.puts()
+
+        :ets.insert(:sp, {socket.assigns.db_topic, o})
 
         {:noreply, socket}
 
