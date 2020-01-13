@@ -1,5 +1,5 @@
 import connection from "./connect";
-import localState from "./state";
+import localState from "./local-state";
 import {
 	err,
 	errOut,
@@ -94,14 +94,6 @@ export class Node {
 		}
 	}
 
-	blobFetch(shape, callback) {
-		//
-	}
-
-	blobFetchAndWatch(shape, callback) {
-		//
-	}
-
 	off(predicates) {
 		notStrings(predicates, "node.off() arg 1 type must be either String or Array<String>");
 		connection.off(predicates);
@@ -116,7 +108,7 @@ export class Node {
 			"node.write() arg 1 and 2 must be of type String");
 
 		if (this.subject) {
-			connection.write(this.topic(prop), value);
+			localState.write(this.topic(prop), value);
 		} else {
 			err("node.write() called but no UUID found");
 		}

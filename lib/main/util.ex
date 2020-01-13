@@ -67,19 +67,24 @@ defmodule OPN.Util do
 
   def decrypt(%Phoenix.Socket{} = socket, ciphertext) do
     socket.assigns.public_key
-    |> Base.decode64!()
+    |> safe_decode64()
     |> decrypt(ciphertext)
   end
 
+  def decrypt(nil, _ciphertext) do
+    IO.puts("Can't decrypt from invalid encoding")
+  end
+
   def decrypt(public_key, ciphertext) do
+    IO.puts("pubkey: #{inspect(public_key)}, ciphertext: #{inspect(ciphertext)}")
     nonce_size = Box.primitive().noncebytes()
     <<nonce::binary-size(nonce_size), ciphertext::binary>> = ciphertext
 
-    Box.primitive().open_easy(
+    {:ok, Box.primitive().open_easy(
       ciphertext,
       nonce,
       public_key,
       get_secret_key()
-    )
+    )}
   end
 end

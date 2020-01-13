@@ -101,7 +101,6 @@ class SocketConnection {
 
 	encrypt(string) {
 		if (!this.peerKey) throw new Error("encrypt() called but peerKey unavailable.");
-		debugger;
 		return encrypt(string, this.peerKey);
 	}
 
@@ -138,8 +137,10 @@ class SocketConnection {
 		this.useTopic(topic).then((channel) => {
 			const ref = channel.on("fetch response", (response) => {
 				if (response && response.ct && response.ct.length) {
-					debugger;
+					const [_, subject, predicate] = channel.topic.match(/^sp:([^:]+):([^:]+)/);
 					callback({
+						subject,
+						predicate,
 						object: this.decrypt(response.ct),
 					});
 				} else {
@@ -187,7 +188,6 @@ class SocketConnection {
 	}
 
 	write(topic, value) {
-		debugger;
 		errOut(!validTopic(topic), "connection.write() received invalid topic");
 		if (!this.socket || !this.peerKey) {
 			console.log(this.socket);
