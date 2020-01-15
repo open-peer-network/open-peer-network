@@ -1,5 +1,13 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## TODO
+1. Write a component that is a colored square which changes color randomly with a button press
+2. Break this component out into it's own file and configure App to generate a grid of them
+3. Make color randomization per component
+4. Make grid size configurable
+5. Make color change on a timer
+6. Make tempo configurable
+
 ## Available Scripts
 
 In the project directory, you can run:
