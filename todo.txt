@@ -1,0 +1,1 @@
+* read about rdf databases as well as how graph db's work/what they look like
