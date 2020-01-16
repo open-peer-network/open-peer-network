@@ -1,20 +1,25 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import styled from 'styled-components';
 
-const ColorSquare = () => {
-  const color = useSelector(state => state.color);
+const ColorSquareContainer = styled.div`
+  display: flex;
+`
+
+const ColorSquare = (props) => {
+  const color = useSelector(state => state.squareColors[props.squareIndex]);
 
   return (
-    <div className="ColorSquare">
+    <ColorSquareContainer>
       <div 
         style={{
-          width: '100px',
-          height: '100px',
-          background: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
+        height: props.size,
+        width: props.size,
+        background: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
         }}
       >
       </div>
-    </div>
+    </ColorSquareContainer>
   )
 }
 
