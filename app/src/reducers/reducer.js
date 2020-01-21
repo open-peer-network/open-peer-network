@@ -1,6 +1,6 @@
 const initialState = {
-  gridSize: 6,
-  squareColors: new Array(36).fill([0,0,0])
+  gridSize: 1,
+  squareColors: [[0,0,0]]
 };
 
 function reducer(state = initialState, action) {
@@ -16,8 +16,8 @@ function reducer(state = initialState, action) {
     case 'CHANGE_GRID_SIZE':
       return {
         ...state,
-        gridSize: action.gridSize,
-        squareColors: new Array(action.gridSize*action.gridSize).fill([0,0,0])
+        gridSize: action.newSize,
+        squareColors: new Array(action.newSize*action.newSize).fill([0,0,0])
       }
 
     default:

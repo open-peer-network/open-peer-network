@@ -4,13 +4,23 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 1. Write a component that is a colored square which changes color randomly with a button press
 2. Break this component out into it's own file and configure App to generate a grid of them
 3. Make color randomization per component
+  * How do we do this?
+    * store colorsquares in a list in state
+    * on button press, loop through this list and dispatch an action for each square which updates it's color
+    * so state will be:
+state = {
+  ...state,
+  colorSquares: [[r,g,b], ...]
+}
+
+handleClick will: state.colorSquares.forEach(() => dispatch(updateSquare))
 4. Make grid size configurable
 5. Make color change on a timer
 6. Make tempo configurable
 
 ## Available Scripts
 
-In the project directory, you can run:
+In the project directory, you can run
 
 ### `yarn start`
 

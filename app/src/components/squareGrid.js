@@ -2,7 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import ColorSquare from './colorSquare';
 
-const gridContainerSize = 600;
+
+const gridContainerSize = 800;
 
 const GridContainer = styled.div`
   display: flex;
