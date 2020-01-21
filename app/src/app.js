@@ -8,13 +8,8 @@ const App = () => {
   const dispatch = useDispatch();
   const gridSize = useSelector(state => state.gridSize);
 
-  // This is a hacky solution to updating a single element in
-  // in the squareColors array stored in state
-  // TODO: find a better way to update the color of a single square
   const currentColors = useSelector(state => state.squareColors);
 
-  // Could manage state in a much more efficient way but
-  // wanted to maximize the number of calls to dispatch
   const handleClick = () => {
     setInterval(() => {
       for(let i=0; i < gridSize*gridSize; i++) {
