@@ -1,34 +1,31 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import ColorSquareGrid from './components/squareGrid';
 import randomRGB from './lib/randomRGB';
+import useSharedState from 'use-simple-shared-state';
+import store from './store';
 
+const { changeColors, changeGridSize } = store.actions;
+const selectors = [
+  s => s.gridSize,
+  s => s.squareColors,
+];
 
 const App = () => {
-  const dispatch = useDispatch();
-  const gridSize = useSelector(state => state.gridSize);
-
-  const currentColors = useSelector(state => state.squareColors);
+  const [gridSize, currentColors] = useSharedState(store, selectors);
 
   const handleClick = () => {
     setInterval(() => {
       for(let i=0; i < gridSize*gridSize; i++) {
         var newColors = currentColors;
         newColors[i] = randomRGB();
-        dispatch({
-          type: 'CHANGE_COLOR',
-          newColors: newColors 
-        });
+        changeColors(newColors);
       }
     }, 100);
   }
 
   const handleChange = (e) => {
     stopColors();
-    dispatch({
-      type: 'CHANGE_GRID_SIZE',
-      newSize: e.target.value
-    })
+    changeGridSize(e.target.value);
   }
 
   const stopColors = () => {
@@ -54,7 +51,7 @@ const App = () => {
     </button>
     <br/>
 
-    <input 
+    <input
     type="range"
       min="1"
       max="11"
