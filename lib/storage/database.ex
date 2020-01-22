@@ -1,6 +1,11 @@
 defmodule OPN.Database do
-  use Phoenix.Endpoint, otp_app: :opn
+  # use Phoenix.Endpoint, otp_app: :opn
   alias OPN.Caylir
+
+  def init(_) do
+    conf = Application.fetch_env!(:opn, __MODULE__)
+    IO.inspect(conf)
+  end
 
   defp spo(s, p, o), do: %{"subject" => s, "predicate" => p, "object" => o}
 
@@ -43,5 +48,10 @@ defmodule OPN.Database do
 
   defp write_new(:ok, s, p, o) do
     Caylir.write(spo(s, p, o))
+  end
+
+  def collect_garbage(%{:unread_data_ttl => unread_ttl, :absent_user_ttl => absent_ttl}) do
+    IO.puts("unread: #{inspect(unread_ttl)}")
+    IO.puts("absent: #{inspect(absent_ttl)}")
   end
 end

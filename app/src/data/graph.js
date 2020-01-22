@@ -6,11 +6,13 @@ import {
 	triple,
 	notStrings,
 	validateCredentials,
+	officialTopic,
+	validTopic,
 } from "./helpers";
 import {
 	keyFromPassword,
 	storeKeys,
-	publicKey,
+	getPublicKey,
 } from "./crypto";
 
 
@@ -18,25 +20,31 @@ const backend = process.env.REACT_APP_HOST_DOMAIN;
 connection.start(`${backend}/socket`);
 
 export class Node {
-	uuid = false;
+	subject = false;
 	listeners = [];
 	fetchStack = [];
 	watchStack = [];
 	topicValues = {};
 
+	constructor(subject) {
+		this.subject = subject;
+	}
+
 	topic(predicate) {
-		return this.uuid ? `${this.uuid}:${predicate}` : false;
+		return this.subject ? officialTopic({ subject: this.subject, predicate }) : false;
 	}
 
 	_emptyFetchStack() {
 		while (this.fetchStack.length) {
-			this._fetch.apply(this, this.fetchStack.shift());
+			const [pred, callback] = this.fetchStack.shift();
+			this._fetch(this.topic(pred), callback);
 		}
 	}
 
 	_emptyWatchStack() {
 		while (this.watchStack.length) {
-			this._watch.apply(this, this.watchStack.shift());
+			const [pred, callback] = this.watchStack.shift();
+			this._watch(this.topic(pred), callback);
 		}
 	}
 
@@ -44,26 +52,27 @@ export class Node {
 		notStrings(predicates, "node.read() arg 1 type must be either String or Array<String>");
 		errOut(typeof callback !== "function", "node.read() arg 2 type must be Function");
 
-		if (!this.uuid) {
+		if (!this.subject) {
 			[].concat(predicates).forEach((pred) => {
 				this.fetchStack.push([pred, callback]);
 			});
 		} else {
 			[].concat(predicates).forEach((pred) => {
-				this._fetch(pred, callback);
+				this._fetch(this.topic(pred), callback);
 			});
 		}
 	}
 
-	_fetch(predicate, callback) {
-		localState.fetch(this.topic(predicate), callback);
+	_fetch(topic, callback) {
+		errOut(!validTopic(topic), "node._fetch() received invalid topic");
+		localState.fetch(topic, callback);
 	}
 
 	watch(predicates, callback) {
 		notStrings(predicates, "node.on() arg 1 type must be either String or Array<String>");
 		errOut(typeof callback !== "function", "node.on() arg 2 type must be Function");
 
-		if (this.uuid) {
+		if (this.subject) {
 			[].concat(predicates).forEach((predicate) => {
 				localState.watch(this.topic(predicate), callback);
 			});
@@ -75,11 +84,9 @@ export class Node {
 	}
 
 	fetchAndWatch(predicates, callback) {
-		if (this.uuid) {
-			[].concat(predicates).forEach((predicate) => {
-				this.fetch(predicate, callback);
-				this.watch(predicate, callback);
-			});
+		if (this.subject) {
+			this.fetch(predicates, callback);
+			this.watch(predicates, callback);
 		} else {
 			[].concat(predicates).forEach((predicate) => {
 				this.fetchStack.push([predicate, callback]);
@@ -109,8 +116,8 @@ export class Node {
 		errOut(typeof prop !== "string" || typeof value !== "string",
 			"node.write() arg 1 and 2 must be of type String");
 
-		if (this.uuid) {
-			connection.write(this.topic(prop), triple(this.uuid, prop, value));
+		if (this.subject) {
+			connection.write(this.topic(prop), triple(this.subject, prop, value));
 		} else {
 			err("node.write() called but no UUID found");
 		}
@@ -126,27 +133,27 @@ class User extends Node {
 	fetchAndWatchStack = [];
 
 	login(email, password) {
-		// if (publicKey()) throw new Error("user.login() called while already logged in");
+		// if (getPublicKey()) throw new Error("user.login() called while already logged in");
 		validateCredentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
-		this.uuid = publicKey();
+		this.subject = getPublicKey();
 	}
 
 	logout() {
-		if (!publicKey()) throw new Error("user.logout() called while not logged in");
+		if (!getPublicKey()) throw new Error("user.logout() called while not logged in");
 
 		storeKeys({});
 		this.keychain = {};
-		this.uuid = null;
+		this.subject = null;
 	}
 
 	register(email, password) {
-		if (publicKey()) throw new Error("user.register() called while already logged in");
+		if (getPublicKey()) throw new Error("user.register() called while already logged in");
 		validateCredentials(email, password);
 
 		storeKeys(keyFromPassword(email + password));
-		this.uuid = publicKey();
+		this.subject = getPublicKey();
 	}
 }
 

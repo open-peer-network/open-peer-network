@@ -1,12 +1,15 @@
 import React, { useReducer, useCallback, useRef, useEffect } from "react";
 // import connection from "./data/connect";
 import "./index.css";
-import { publicKey } from "./data/crypto";
-import user from "./data/graph";
+import { getPublicKey } from "./data/crypto";
+import user, { Node } from "./data/graph";
 
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
-user.login(email, password);
+// eslint-disable-next-line no-restricted-globals
+user.login(email, password + (location.hash ? location.hash : ''));
+
+const node = new Node('node1');
 
 const reducer = (oldState, newState) => {
 	return {
@@ -25,12 +28,12 @@ const App = () => {
 	const stateRef = useRef(initialState);
 	stateRef.current = state || initialState;
 
-	const typingFirstName = useCallback(({ target }) => user.write("first_name", target.value), []);
-	const typingLastName = useCallback(({ target }) => user.write("last_name", target.value), []);
-	const typingEmail = useCallback(({ target }) => user.write("email", target.value), []);
+	const typingFirstName = useCallback(({ target }) => node.write("first_name", target.value), []);
+	const typingLastName = useCallback(({ target }) => node.write("last_name", target.value), []);
+	const typingEmail = useCallback(({ target }) => node.write("email", target.value), []);
 
 	useEffect(() => {
-		user.fetchAndWatch([
+		node.fetchAndWatch([
 			"first_name",
 			"last_name",
 			"email",
@@ -44,7 +47,7 @@ const App = () => {
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={publicKey() || ""} readOnly />
+				<input name="pubkey" className="monospace" value={getPublicKey() || ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>

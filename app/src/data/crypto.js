@@ -21,11 +21,11 @@ export function generateKeyPair() {
 	};
 };
 
-const secretKey = () => {
+const getSecretKey = () => {
 	return SESSION_KEYS.secretKey;
 };
 
-export const publicKey = () => {
+export const getPublicKey = () => {
 	return SESSION_KEYS.publicKey;
 };
 
@@ -55,7 +55,7 @@ export const encrypt = (json, publicKey) => {
 		util.decodeUTF8(message),
 		nonce,
 		util.decodeBase64(publicKey),
-		util.decodeBase64(secretKey()),
+		util.decodeBase64(getSecretKey()),
 	);
 
 	return {
@@ -70,7 +70,7 @@ export const decrypt = (box, nonce, publicKey) => {
 		util.decodeBase64(box),
 		util.decodeBase64(nonce),
 		util.decodeBase64(publicKey),
-		util.decodeBase64(secretKey()),
+		util.decodeBase64(getSecretKey()),
 	);
 	// Convert to utf-8 and parse as JSON.
 	return JSON.parse(new TextDecoder().decode(packet));

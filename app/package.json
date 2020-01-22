@@ -4,7 +4,10 @@
   "private": true,
   "dependencies": {
     "dotenv": "^8.2.0",
+    "libsodium": "^0.7.6",
+    "lodash.isfunction": "^3.0.9",
     "lodash.isstring": "^4.0.1",
+    "lodash.keys": "^4.2.0",
     "lodash.merge": "^4.6.2",
     "lodash.values": "^4.3.0",
     "phoenix": "^1.4.10",
@@ -13,6 +16,7 @@
     "react-scripts": "3.2.0",
     "scrypt-js": "^3.0.0",
     "sha.js": "^2.4.11",
+    "simple-peer": "^9.6.2",
     "tweetnacl": "^1.0.1",
     "tweetnacl-util": "^0.15.0",
     "uuid": "^3.3.3"

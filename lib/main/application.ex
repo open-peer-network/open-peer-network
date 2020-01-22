@@ -4,14 +4,11 @@ defmodule OPN.Application do
 
   def start(_type, _args) do
     children = [
-      # {
-      #   Registry,
-      #   keys: :unique,
-      #   name: Registry.OPN
-      # },
-      # DeltaCrdt.CausalCrdt,
+      OPN.Caylir,
+      OPN.Scheduler,
       OPNWeb.Endpoint,
-      OPN.Caylir
+      OPN.Presence,
+      OPN.SPDatabase
     ]
 
     # Use cryptographically strong seed for random number generator
@@ -20,7 +17,12 @@ defmodule OPN.Application do
 
     :rand.seed(:exsplus, {i1, i2, i3})
 
-    # {public_key, secret_key} = Kcl.generate_key_pair()
+    {secret_key, public_key} = Kcl.generate_key_pair()
+    :ets.new(:keys, [:named_table])
+    :ets.new(:users, [:set, :public, :named_table])
+    # :ets.new(:sp, [:set, :public, :named_table])
+    :ets.insert(:keys, {:secret_key, secret_key})
+    :ets.insert(:keys, {:public_key, Base.encode64(public_key)})
 
     Supervisor.start_link(children,
       strategy: :one_for_one,
