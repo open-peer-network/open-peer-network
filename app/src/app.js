@@ -55,7 +55,7 @@ const App = () => {
     <br/>
 
     <input 
-    type="range"
+      type="range"
       min="1"
       max="11"
       step="1"

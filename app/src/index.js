@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import reducer from './reducers/reducer';
-import App from './App';
+import App from './app';
 import * as serviceWorker from './serviceWorker';
 
 const vehicle = createStore(reducer);
