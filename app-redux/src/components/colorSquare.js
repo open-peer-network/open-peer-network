@@ -13,9 +13,9 @@ const ColorSquare = (props) => {
     <ColorSquareContainer>
       <div 
         style={{
-        height: props.size,
-        width: props.size,
-        background: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
+          height: props.size,
+          width: props.size,
+          background: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
         }}
       >
       </div>
