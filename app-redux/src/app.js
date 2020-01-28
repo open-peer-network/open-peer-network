@@ -12,7 +12,7 @@ const App = () => {
 
   const handleClick = () => {
     const t1 = performance.now();
-    for(let i=0; i < 1000000; i++) {
+    for(let i=0; i < 100000; i++) {
       var newColors = currentColors;
       newColors[i] = randomRGB();
       dispatch({

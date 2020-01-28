@@ -3,24 +3,23 @@ import store from '../store';
 import useSharedState from 'use-simple-shared-state';
 import styled from 'styled-components';
 
-const ColorSquareContainer = styled.div`
+const ColorSquareContainer = styled.div.attrs(({ size }) => ({
+  style: {
+    height: `${size}px`,
+    width: `${size}px`,
+  }
+}))`
   display: flex;
-`
+`;
 
 const ColorSquare = (props) => {
-  const [color] = useSharedState(store, [s => s.squareColors[props.squareIndex]]);
+  const [[r,g,b]] = useSharedState(store, [s => s.squareColors[props.squareIndex]]);
 
   return (
-    <ColorSquareContainer>
-      <div
-        style={{
-        height: props.size,
-        width: props.size,
-        background: `rgb(${color[0]}, ${color[1]}, ${color[2]})`
-        }}
-      >
-      </div>
-    </ColorSquareContainer>
+    <ColorSquareContainer
+      size={props.size}
+      style={{ background: `rgb(${r}, ${g}, ${b})` }}
+    />
   )
 }
 
