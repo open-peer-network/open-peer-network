@@ -14,13 +14,14 @@ const App = () => {
   const [gridSize, currentColors] = useSharedState(store, selectors);
 
   const handleClick = () => {
-    setInterval(() => {
-      for(let i=0; i < gridSize*gridSize; i++) {
-        var newColors = currentColors;
-        newColors[i] = randomRGB();
-        changeColors(newColors);
-      }
-    }, 100);
+    const t1 = performance.now();
+    for(let i=0; i < 50000; i++) {
+      var newColors = currentColors;
+      newColors[i] = randomRGB();
+      changeColors(newColors);
+    }
+    const t2 = performance.now();
+    console.log(t2-t1);
   }
 
   const handleChange = (e) => {
