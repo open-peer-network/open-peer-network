@@ -8,9 +8,11 @@ const state = {
 const actions = () => ({
 	changeGridSize: (gridSize) => ({
 		gridSize,
-		squareColors: new Array(gridSize * gridSize).fill([0,0,0])
+		squareColors: Array(gridSize * gridSize).fill([0,0,0]),
 	}),
-	changeColors: (squareColors) => ({ squareColors }),
+	changeColors: (i, squareColor) => ({
+		squareColors: { [i]: squareColor },
+	}),
 });
 
 export default new Store(state, actions);
