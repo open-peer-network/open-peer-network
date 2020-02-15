@@ -28,6 +28,17 @@ defmodule OPN.Util do
     end
   end
 
+  def get_data(lookedup) do
+    case :ets.lookup(:sp, lookedup) do
+      [] -> false
+      result -> result |> unpack_ets()
+    end
+  end
+
+  def get_secret_key() do
+    :ets.lookup(:keys, :secret_key) |> unpack_ets()
+  end
+
   def safe_encode64(bytes) do
     case String.match?(bytes, ~r/^base64:/) do
       true -> bytes

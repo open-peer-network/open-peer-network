@@ -7,7 +7,8 @@ defmodule OPN.Application do
       OPN.Caylir,
       OPN.Scheduler,
       OPNWeb.Endpoint,
-      OPN.Presence
+      OPN.Presence,
+      OPN.SPDatabase
     ]
 
     # Use cryptographically strong seed for random number generator
@@ -17,6 +18,7 @@ defmodule OPN.Application do
     :rand.seed(:exsplus, {i1, i2, i3})
 
     :ets.new(:users, [:set, :public, :named_table])
+
     OPN.Util.initialize_keys()
 
     Supervisor.start_link(children,
