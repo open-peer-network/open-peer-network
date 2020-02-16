@@ -8795,6 +8795,11 @@ simple-peer@^9.6.2:
     randombytes "^2.0.3"
     readable-stream "^3.4.0"
 
+simple-shared-state@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/simple-shared-state/-/simple-shared-state-5.0.1.tgz#4ad751e9833f184025e6b399a8124ad84dce763d"
+  integrity sha512-p3WLlpF13+CmQrMjAqeymbfFJMdWIgtOg5cc35MftZ+yVzda9q/+ItT7J75/L2Ml+oHm9ngKMXYO+cc7wxScxA==
+
 simple-swizzle@^0.2.2:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/simple-swizzle/-/simple-swizzle-0.2.2.tgz#a4da6b635ffcccca33f70d17cb92592de95e557a"
@@ -9665,6 +9670,11 @@ url@^0.11.0:
   dependencies:
     punycode "1.3.2"
     querystring "0.2.0"
+
+use-simple-shared-state@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/use-simple-shared-state/-/use-simple-shared-state-0.0.2.tgz#4e6d56674a34cd8cb7b27233c122fb050c2e9e38"
+  integrity sha512-y8NGOK67okKfi0byDj8uINH8pS4VMAA+9FGAOy3/qcom/QBLa/IaCYwxtI2LEfmfxwlY+rnRbLANIg0BOgoTsg==
 
 use@^3.1.0:
   version "3.1.1"

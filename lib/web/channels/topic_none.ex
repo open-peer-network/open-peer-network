@@ -17,7 +17,7 @@ defmodule OPNWeb.TopicNone do
 
   def join(topic, payload, _socket) do
     msg = "No match for topic: #{topic}, payload: #{inspect(payload)}. Likely missing public key."
-    "ERROR: #{msg}" |> IO.puts()
+    IO.puts("ERROR: #{msg}")
 
     {:error, msg}
   end
@@ -28,8 +28,7 @@ defmodule OPNWeb.TopicNone do
   end
 
   def handle_in(action, payload, socket) do
-    "Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}"
-    |> IO.puts()
+    IO.puts("Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}")
 
     {:noreply, socket}
   end

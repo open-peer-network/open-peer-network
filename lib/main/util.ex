@@ -83,19 +83,19 @@ defmodule OPN.Util do
   end
 
   def decrypt(nil, _ciphertext) do
-    IO.puts("Can't decrypt from invalid encoding")
+    IO.warn("Can't decrypt from invalid encoding")
   end
 
   def decrypt(public_key, ciphertext) do
     IO.puts("pubkey: #{inspect(public_key)}, ciphertext: #{inspect(ciphertext)}")
     nonce_size = Box.primitive().noncebytes()
-    <<nonce::binary-size(nonce_size), ciphertext::binary>> = ciphertext
+    <<nonce::binary-size(nonce_size), ciphertext::binary>> = safe_decode64(ciphertext)
 
-    {:ok, Box.primitive().open_easy(
+    Box.primitive().open_easy(
       ciphertext,
       nonce,
       public_key,
       get_secret_key()
-    )}
+    )
   end
 end

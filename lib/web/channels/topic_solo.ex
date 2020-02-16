@@ -42,8 +42,7 @@ defmodule OPNWeb.TopicSolo do
   end
 
   def handle_in(action, payload, socket) do
-    "Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}"
-    |> IO.puts()
+    IO.puts("Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}")
 
     {:noreply, socket}
   end

@@ -1,7 +1,7 @@
 defmodule OPNWeb.TopicSP do
   use Phoenix.Channel
   import Phoenix.Socket, only: [assign: 2]
-  # alias OPN.Presence
+  alias OPN.Presence
   alias OPN.Database
   alias OPN.Util
 
@@ -30,19 +30,19 @@ defmodule OPNWeb.TopicSP do
 
   def join(topic, payload, _socket) do
     msg = "No match for topic: #{topic}, payload: #{inspect(payload)}. Likely missing public key."
-    "ERROR: #{msg}" |> IO.puts()
+    IO.puts("ERROR: #{msg}")
 
     {:error, msg}
   end
 
   def handle_info(:after_join, socket) do
     users = Util.get_users_on_topic(socket.assigns.db_topic)
-    "!!! FOUND USERS ON TOPIC #{socket.assigns.db_topic}: #{inspect(users)}" |> IO.puts()
+    IO.puts("!!! FOUND USERS ON TOPIC #{socket.assigns.db_topic}: #{inspect(users)}")
 
     push(socket, "connect", %{"public_key" => Util.get_public_key(:base64), "peers" => users})
 
-    # Presence.track(socket, socket.assigns.public_key, %{})
-    # push(socket, "presence_state", Presence.list(socket.topic))
+    Presence.track(socket, socket.assigns.public_key, %{})
+    push(socket, "presence_state", Presence.list(socket.topic))
 
     if !Enum.member?(users, socket.assigns.public_key) do
       :ets.insert(:users, {socket.assigns.db_topic, [socket.assigns.public_key | users]})
@@ -51,71 +51,60 @@ defmodule OPNWeb.TopicSP do
     {:noreply, socket}
   end
 
-  def handle_in("fetch", _payload, socket) do
-    [subj, pred] = String.split(socket.assigns.db_topic, ":")
+  def handle_in("fetch-request", _payload, socket) do
+    [subj, pred] = String.split(socket.assigns.db_topic, ~r"(?<!base64):")
 
     case Util.get_data(socket.assigns.db_topic) do
       false ->
-        case Database.query(%{"s" => subj, "p" => [pred]}) do
-          {:ok, data} ->
-            {msg, state} = Util.encrypt(socket, Jason.encode!(data))
+        case Database.get_one(subj, pred) do
+          {:ok, nil} ->
+            {:ok, ct} = Util.encrypt(socket, "")
+            {:reply, {:json, %{"ct" => Util.safe_encode64(ct)}}, socket}
 
-            push(socket, "fetch response", %{
-              "box" => Base.encode64(msg),
-              "nonce" => Base.encode64(state.previous_nonce)
-            })
-
-            {:noreply, socket}
+          {:ok, object} ->
+            {:ok, ct} = Util.encrypt(socket, object)
+            {:reply, {:json, %{"ct" => Util.safe_encode64(ct)}}, socket}
 
           {:error, reason} ->
-            push(socket, "fetch response", %{"error" => reason})
-            "query failed: #{inspect(reason)}" |> IO.puts()
-            {:noreply, socket}
+            IO.puts("query failed: #{inspect(reason)}")
+            {:reply, {:json, %{"error" => reason}}, socket}
         end
 
       object ->
-        IO.puts "Found in :sp DB: #{IO.inspect(object)}"
-        {msg, state} = Util.encrypt(socket, Jason.encode!(%{
-          "subject" => subj,
-          "data" => %{pred => object},
-        }))
-
-        push(socket, "fetch response", %{
-          "box" => Base.encode64(msg),
-          "nonce" => Base.encode64(state.previous_nonce)
-        })
-
-        {:noreply, socket}
+        IO.puts("Found in :sp DB: #{IO.inspect(object)}")
+        {:ok, ct} = Util.encrypt(socket, object)
+        {:reply, {:json, %{"ct" => Util.safe_encode64(ct)}}, socket}
     end
   end
 
-  # def handle_in("write", ciphertext, socket) do
   def handle_in("write", %{"ct" => ciphertext}, socket) do
-    ["sp", subj, pred] = socket.topic |> String.split(":")
+    [subj, pred] = String.split(socket.assigns.db_topic, ~r"(?<!base64):")
 
     case Util.decrypt(socket, ciphertext) do
-      {:ok, plaintext_obj} ->
-        IO.puts("!!!!!!!! write received #{inspect(plaintext_obj)}")
+      {:ok, obj_pt} ->
+        IO.puts("WRITE RECEIVED, S: #{subj} P: #{pred} O: #{inspect(obj_pt)}")
+        case Database.write(subj, pred, obj_pt) do
+          :ok ->
+            {:ok, ct} = Util.encrypt(socket, obj_pt)
+            :ets.insert(:sp, {socket.assigns.db_topic, obj_pt})
+            endpoint_broadcast!(socket.topic, "value", %{"ct" => Util.safe_encode64(ct)})
 
-        # DeltaCrdt.mutate(crdt, :add, ["#{s}:#{p}", o])
-        :ok = Database.write(subj, pred, plaintext_obj)
+            {:noreply, socket}
 
-        resp = endpoint_broadcast!(socket.topic, "value", %{"ct" => Util.encrypt(socket, plaintext_obj)})
-        "broadcast returned: #{inspect(resp)}" |> IO.puts()
+          otherwise ->
+            IO.warn(inspect(otherwise))
 
-        :ets.insert(:sp, {socket.assigns.db_topic, plaintext_obj})
-
-        {:noreply, socket}
+            {:noreply, socket}
+        end
 
       json ->
-        "JSON decode failed: #{inspect(json)}" |> IO.puts()
+        IO.puts("JSON decode failed: #{inspect(json)}")
         {:noreply, socket}
     end
   end
 
   def handle_in(action, payload, socket) do
-    "Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}"
-    |> IO.puts()
+    IO.puts("Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}")
 
     {:noreply, socket}
   end

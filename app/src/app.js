@@ -1,69 +1,58 @@
-import React, { useReducer, useCallback, useRef, useEffect } from "react";
-// import connection from "./data/connect";
+import React from "react";
 import "./index.css";
-import { ready, getPublicKey } from "./data/crypto";
-import { toBase64 } from "./data/encoding";
-import user, { Node } from "./data/graph";
+import { ready } from "./data/crypto";
+import store from "./store";
+import useSharedState from "use-simple-shared-state";
 
+const backend = process.env.REACT_APP_HOST_DOMAIN;
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
 
+const {
+	setFirstName,
+	setLastName,
+	setEmail,
+} = store.actions;
+
 ready(() => {
-	// eslint-disable-next-line no-restricted-globals
-	user.login(email, password + (location.hash ? location.hash : ''));
+	store.useSecret(email, password);
+	store.connection.start(`${backend}/socket`);
 });
 
-const node = new Node('node1');
-
-const reducer = (oldState, newState) => {
-	return {
-		...oldState,
-		...newState,
-	};
+const useUser1 = () => {
+	store.useSecret(email+"1", password+"1");
 };
-const initialState = {
-	first_name: "",
-	last_name: "",
-	email: "",
+const useUser2 = () => {
+	store.useSecret(email+"2", password+"2");
 };
 
 const App = () => {
-	const [state, dispatch] = useReducer(reducer, initialState);
-	const stateRef = useRef(initialState);
-	stateRef.current = state || initialState;
-
-	const typingFirstName = useCallback(({ target }) => node.write("first_name", target.value), []);
-	const typingLastName = useCallback(({ target }) => node.write("last_name", target.value), []);
-	const typingEmail = useCallback(({ target }) => node.write("email", target.value), []);
-
-	useEffect(() => {
-		node.fetchAndWatch([
-			"first_name",
-			"last_name",
-			"email",
-		], ({ predicate, object }) => {
-			dispatch({ [predicate]: object });
-		});
-	}, []);
+	const [first_name, last_name, email] = useSharedState(store, [
+		s => s.first_name,
+		s => s.last_name,
+		s => s.email,
+	]);
 
 	return (
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={getPublicKey() ? toBase64(getPublicKey()) : ""} readOnly />
+				<input name="pubkey" className="monospace" value={store.getPublicKey() || ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>
-				<input name="first_name" onChange={typingFirstName} value={stateRef.current.first_name || ""} />
+				<input name="first_name" onChange={setFirstName} value={first_name} />
 			</div>
 			<div>
 				<label htmlFor="last_name">Last Name: </label>
-				<input name="last_name" onChange={typingLastName} value={stateRef.current.last_name || ""} />
+				<input name="last_name" onChange={setLastName} value={last_name} />
 			</div>
 			<div>
 				<label htmlFor="email">Email: </label>
-				<input name="email" onChange={typingEmail} value={stateRef.current.email || ""} />
+				<input name="email" onChange={setEmail} value={email} />
 			</div>
+			<button onClick={useUser1}>User 1</button>
+			<button onClick={useUser2}>User 2</button>
 		</div>
 	);
 }
