@@ -15,15 +15,21 @@ const {
 } = store.actions;
 
 ready(() => {
-	store.useSecret(email, password);
+	store.setSecret(email, password);
 	store.connection.start(`${backend}/socket`);
 });
 
+const useDefault = () => {
+	store.setSecret(email, password);
+};
 const useUser1 = () => {
-	store.useSecret(email+"1", password+"1");
+	store.setSecret(email+"1", password+"1");
 };
 const useUser2 = () => {
-	store.useSecret(email+"2", password+"2");
+	store.setSecret(email+"2", password+"2");
+};
+const useNonUser = () => {
+	store.setGlobalId("global_id_1");
 };
 
 const App = () => {
@@ -51,8 +57,10 @@ const App = () => {
 				<label htmlFor="email">Email: </label>
 				<input name="email" onChange={setEmail} value={email} />
 			</div>
+			<button onClick={useDefault}>Default User</button>
 			<button onClick={useUser1}>User 1</button>
 			<button onClick={useUser2}>User 2</button>
+			<button onClick={useNonUser}>Use Non-User</button>
 		</div>
 	);
 }

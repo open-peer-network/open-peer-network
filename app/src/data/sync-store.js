@@ -43,13 +43,13 @@ export class SyncStore extends Store {
                 && node.keys.getPublicKey(true);
         }
 
-        this.useSecret = (email, passphrase) => {
+        this.setSecret = (email, passphrase) => {
             if (node) clear();
             node = new PrivateNode(email, passphrase);
             init();
         };
 
-        this.setNode = (globalId) => {
+        this.setGlobalId = (globalId) => {
             if (node) clear();
             node = new PublicNode(globalId);
             init();
