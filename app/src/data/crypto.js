@@ -32,15 +32,34 @@ export class KeyContainer {
 		const box = sodium.crypto_box_easy(plaintext, nonce, publicKey, this.keys.privateKey);
 		return toBase64(concatUint8(nonce, box));
 	}
-	decrypt(byteArray, publicKey) {
-		byteArray = fromBase64(byteArray);
-		if (byteArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
+	encryptPrivate(plaintext) {
+		const nonce = getNonce();
+		const ciphertext = sodium.crypto_secretbox_easy(plaintext, nonce, this.keys.privateKey);
+		const bytes = concatUint8(nonce, ciphertext);
+		const box = toBase64(bytes);
+
+		return box;
+	}
+	decryptPrivate(box) {
+		const boxBytesArray = fromBase64(box);
+		if (boxBytesArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
+			throw new Error("invalid ciphertext, too short");
+		}
+		const nonce = boxBytesArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+		const ciphertext = boxBytesArray.slice(sodium.crypto_secretbox_NONCEBYTES);
+		const plaintext = sodium.crypto_secretbox_open_easy(ciphertext, nonce, this.keys.privateKey);
+
+		return sodium.to_string(plaintext);
+	}
+	decrypt(box, publicKey) {
+		const boxBytesArray = fromBase64(box);
+		if (boxBytesArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
 			throw new Error("Can't decrypt invalid message, length too short");
 		}
-		const nonce = byteArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-		const ciphertext = byteArray.slice(sodium.crypto_secretbox_NONCEBYTES);
+		const nonce = boxBytesArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+		const ciphertext = boxBytesArray.slice(sodium.crypto_secretbox_NONCEBYTES);
 		const plaintext = sodium.crypto_box_open_easy(ciphertext, nonce, publicKey, this.keys.privateKey);
-	
+
 		return sodium.to_string(plaintext);
 	}
 }

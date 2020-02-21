@@ -10,6 +10,7 @@ export class SyncStore extends Store {
         super(initialState, actions, devtool);
         let clear;
         let node;
+        let isPrivate = false;
 
         const init = () => {
             const props = Object.keys(this.stateTree);
@@ -21,9 +22,20 @@ export class SyncStore extends Store {
                 }, false);
                 watching.add(unwatch);
             });
-            node.fetchAndWatch(props, (data) => {
-                const { predicate, object } = data;
-                if (predicate) this.dispatch({ [predicate]: object });
+            node.fetchAndWatch(props, ({ predicate, object }) => {
+                if (isPrivate) {
+                    let plaintext;
+                    try {
+                        plaintext = node.decrypt(object);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                    if (predicate && plaintext) {
+                        this.dispatch({ [predicate]: plaintext });
+                    }
+                } else {
+                    if (predicate) this.dispatch({ [predicate]: object });
+                }
             });
 
             clear = () => {
@@ -33,6 +45,7 @@ export class SyncStore extends Store {
                 });
                 node.clear();
                 node = undefined;
+                isPrivate = false;
             };
         };
 
@@ -41,10 +54,11 @@ export class SyncStore extends Store {
                 && node.keys
                 && node.keys.getPublicKey
                 && node.keys.getPublicKey(true);
-        }
+        };
 
         this.setSecret = (email, passphrase) => {
             if (node) clear();
+            isPrivate = true;
             node = new PrivateNode(email, passphrase);
             init();
         };

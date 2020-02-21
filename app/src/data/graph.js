@@ -1,5 +1,4 @@
 import connection from "./connect";
-import localState from "./local-state";
 import {
 	err,
 	errOut,
@@ -59,7 +58,7 @@ export class PublicNode {
 
 	_fetch(topic, callback) {
 		errOut(!validTopic(topic), "node._fetch() received invalid topic");
-		localState.fetch(topic, callback);
+		connection.fetch(topic, callback);
 	}
 
 	watch(predicates, callback) {
@@ -68,7 +67,7 @@ export class PublicNode {
 
 		if (this.subject) {
 			[].concat(predicates).forEach((pred) => {
-				localState.watch(this.topic(pred), callback);
+				connection.watch(this.topic(pred), callback);
 			});
 		} else {
 			[].concat(predicates).forEach((pred) => {
@@ -106,7 +105,7 @@ export class PublicNode {
 			"node.write() arg 1 and 2 must be of type String");
 
 		if (this.subject) {
-			localState.write(this.topic(prop), value);
+			connection.write(this.topic(prop), value);
 		} else {
 			err("node.write() called but no UUID found");
 		}
@@ -143,5 +142,17 @@ export class PrivateNode extends PublicNode {
 
 		this.keys.set(keyFromPassword(email + password));
 		this.subject = this.keys.getPublicKey(true);
+	}
+
+	encrypt(plaintext) {
+		return this.keys.encryptPrivate(plaintext);
+	}
+
+	decrypt(ciphertext) {
+		return this.keys.decryptPrivate(ciphertext);
+	}
+
+	write(predicate, plaintextObject) {
+		PublicNode.prototype.write.call(this, predicate, this.encrypt(plaintextObject));
 	}
 }
