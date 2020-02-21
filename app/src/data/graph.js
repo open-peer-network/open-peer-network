@@ -1,9 +1,7 @@
 import connection from "./connect";
-import localState from "./state";
 import {
 	err,
 	errOut,
-	triple,
 	notStrings,
 	validateCredentials,
 	officialTopic,
@@ -11,19 +9,12 @@ import {
 } from "./helpers";
 import {
 	keyFromPassword,
-	storeKeys,
-	getPublicKey,
+	KeyContainer,
 } from "./crypto";
 
-
-const backend = process.env.REACT_APP_HOST_DOMAIN;
-connection.start(`${backend}/socket`);
-
-export class Node {
+export class PublicNode {
 	subject = false;
 	listeners = [];
-	fetchStack = [];
-	watchStack = [];
 	topicValues = {};
 
 	constructor(subject) {
@@ -32,20 +23,6 @@ export class Node {
 
 	topic(predicate) {
 		return this.subject ? officialTopic({ subject: this.subject, predicate }) : false;
-	}
-
-	_emptyFetchStack() {
-		while (this.fetchStack.length) {
-			const [pred, callback] = this.fetchStack.shift();
-			this._fetch(this.topic(pred), callback);
-		}
-	}
-
-	_emptyWatchStack() {
-		while (this.watchStack.length) {
-			const [pred, callback] = this.watchStack.shift();
-			this._watch(this.topic(pred), callback);
-		}
 	}
 
 	fetch(predicates, callback) {
@@ -65,42 +42,28 @@ export class Node {
 
 	_fetch(topic, callback) {
 		errOut(!validTopic(topic), "node._fetch() received invalid topic");
-		localState.fetch(topic, callback);
+		connection.fetch(topic, callback);
 	}
 
 	watch(predicates, callback) {
-		notStrings(predicates, "node.on() arg 1 type must be either String or Array<String>");
-		errOut(typeof callback !== "function", "node.on() arg 2 type must be Function");
+		notStrings(predicates, ".watch() arg 1 type must be either String or Array<String>");
+		errOut(typeof callback !== "function", ".watch() arg 2 type must be Function");
 
 		if (this.subject) {
-			[].concat(predicates).forEach((predicate) => {
-				localState.watch(this.topic(predicate), callback);
-			});
-		} else {
-			[].concat(predicates).forEach((predicate) => {
-				this.watchStack.push([predicate, callback]);
+			[].concat(predicates).forEach((pred) => {
+				connection.watch(this.topic(pred), callback);
 			});
 		}
 	}
 
 	fetchAndWatch(predicates, callback) {
+		notStrings(predicates, ".fetchAndWatch() arg 1 type must be either String or Array<String>");
+		errOut(typeof callback !== "function", ".fetchAndWatch() arg 2 type must be Function");
+
 		if (this.subject) {
 			this.fetch(predicates, callback);
 			this.watch(predicates, callback);
-		} else {
-			[].concat(predicates).forEach((predicate) => {
-				this.fetchStack.push([predicate, callback]);
-				this.watchStack.push([predicate, callback]);
-			});
 		}
-	}
-
-	blobFetch(shape, callback) {
-		//
-	}
-
-	blobFetchAndWatch(shape, callback) {
-		//
 	}
 
 	off(predicates) {
@@ -117,7 +80,7 @@ export class Node {
 			"node.write() arg 1 and 2 must be of type String");
 
 		if (this.subject) {
-			connection.write(this.topic(prop), triple(this.subject, prop, value));
+			connection.write(this.topic(prop), value);
 		} else {
 			err("node.write() called but no UUID found");
 		}
@@ -125,36 +88,46 @@ export class Node {
 }
 
 
-class User extends Node {
-	node = null;
-	keychain = {};
-	readListeners = [];
-	watchListeners = [];
-	fetchAndWatchStack = [];
+export class PrivateNode extends PublicNode {
+	keys = new KeyContainer();
+	
+	constructor(email, passphrase) {
+		super(undefined);
+		this.login(email, passphrase);
+	}
 
 	login(email, password) {
-		// if (getPublicKey()) throw new Error("user.login() called while already logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.login() called while already logged in");
 		validateCredentials(email, password);
 
-		storeKeys(keyFromPassword(email + password));
-		this.subject = getPublicKey();
+		this.keys.set(keyFromPassword(email + password));
+		this.subject = this.keys.getPublicKey(true);
 	}
 
 	logout() {
-		if (!getPublicKey()) throw new Error("user.logout() called while not logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.logout() called while not logged in");
 
-		storeKeys({});
-		this.keychain = {};
+		this.keys.set({});
 		this.subject = null;
 	}
 
 	register(email, password) {
-		if (getPublicKey()) throw new Error("user.register() called while already logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.register() called while already logged in");
 		validateCredentials(email, password);
 
-		storeKeys(keyFromPassword(email + password));
-		this.subject = getPublicKey();
+		this.keys.set(keyFromPassword(email + password));
+		this.subject = this.keys.getPublicKey(true);
+	}
+
+	encrypt(plaintext) {
+		return this.keys.encryptPrivate(plaintext);
+	}
+
+	decrypt(ciphertext) {
+		return this.keys.decryptPrivate(ciphertext);
+	}
+
+	write(predicate, plaintextObject) {
+		PublicNode.prototype.write.call(this, predicate, this.encrypt(plaintextObject));
 	}
 }
-
-export default new User();

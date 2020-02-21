@@ -28,45 +28,50 @@ defmodule OPN.SPDatabase do
   def handle_info(:load_data, state) do
     IO.puts("Loading...")
     load_all()
+    IO.puts("Done")
 
     {:noreply, state}
   end
 
   defp load_all() do
-    @all_subjects
-    |> Caylir.query()
-    |> Enum.uniq()
-    |> Enum.map(fn e ->
-      subject = Map.get(e, "id") |> IO.inspect(label: "subject")
+    case @all_subjects |> Caylir.query() do
+      nil ->
+        {:ok, nil}
+      data ->
+        data
+        |> Enum.uniq()
+        |> Enum.map(fn e ->
+          subject = Map.get(e, "id") |> IO.inspect(label: "subject")
 
-      predicates =
-        @all_predicates
-        |> String.replace("##subject##", "#{subject}")
-        |> Caylir.query()
-        |> IO.inspect(label: "predicates")
+          predicates =
+            @all_predicates
+            |> String.replace("##subject##", "#{subject}")
+            |> Caylir.query()
+            |> IO.inspect(label: "predicates")
 
-      Enum.map(predicates, fn pm ->
-        predicate = Map.get(pm, "id")
+          Enum.map(predicates, fn pm ->
+            predicate = Map.get(pm, "id")
 
-        object =
-          @all_objects
-          |> String.replace(
-            ~r/##subject##|##predicate##/,
-            fn s ->
-              case s do
-                "##subject##" -> "#{subject}"
-                "##predicate##" -> "#{predicate}"
-              end
-            end
-          )
-          |> Caylir.query()
-          |> List.first()
-          |> Map.get("id")
+            object =
+              @all_objects
+              |> String.replace(
+                ~r/##subject##|##predicate##/,
+                fn s ->
+                  case s do
+                    "##subject##" -> "#{subject}"
+                    "##predicate##" -> "#{predicate}"
+                  end
+                end
+              )
+              |> Caylir.query()
+              |> List.first()
+              |> Map.get("id")
 
-        IO.inspect("#{subject}:#{predicate}", label: "s:p")
-        IO.inspect("#{object}", label: "o")
-        :ets.insert(:sp, {"#{subject}:#{predicate}", object})
-      end)
-    end)
+            IO.inspect("#{subject}:#{predicate}", label: "s:p")
+            IO.inspect("#{object}", label: "o")
+            :ets.insert(:sp, {"#{subject}:#{predicate}", object})
+          end)
+        end)
+    end
   end
 end

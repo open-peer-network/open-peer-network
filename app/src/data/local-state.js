@@ -8,8 +8,10 @@ class LocalState {
 
     watch(topic, callback) {
         connection.watch(topic, callback);
-        // [].concat(topics).forEach((topic) => {
-        // });
+    }
+
+    write(topic, object) {
+        connection.write(topic, object);
     }
 }
 

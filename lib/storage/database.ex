@@ -1,5 +1,4 @@
 defmodule OPN.Database do
-  # use Phoenix.Endpoint, otp_app: :opn
   alias OPN.Caylir
 
   def init(_) do
@@ -9,29 +8,16 @@ defmodule OPN.Database do
 
   defp spo(s, p, o), do: %{"subject" => s, "predicate" => p, "object" => o}
 
-  def query(%{"s" => subj, "p" => pred}) do
-    case Caylir.query(~s"""
-           var result = {};
-           var user = g.V(#{Jason.encode!(subj)});
-           var predicates = #{Jason.encode!(pred)};
-
-           predicates.map(function(predicate) {
-             result[predicate] = user.out(predicate).toValue();
-           });
-
-           g.emit(result);
-         """) do
-      [data] ->
-        {:ok, %{"subject" => subj, "data" => data}}
-
-      resp ->
-        IO.puts("query failed miserably: #{inspect(resp)}")
-        {:error, resp}
+  def get_one(subj, pred) do
+    case Caylir.query("g.emit(g.V('#{subj}').out('#{pred}').toValue())") do
+      [data] -> {:ok, data}
+      nil -> {:ok, nil}
+      other -> {:error, other}
     end
   end
 
   def write(s, p, o) when is_binary(s) and is_binary(p) and is_binary(o) do
-    "g.emit(g.V(#{Jason.encode!(s)}).out(#{Jason.encode!(p)}).toValue())"
+    "g.emit(g.V('#{s}').out('#{p}').toValue())"
     |> Caylir.query()
     |> object_from_query()
     |> delete_entry(s, p)

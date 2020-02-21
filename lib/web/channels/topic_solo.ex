@@ -11,7 +11,7 @@ defmodule OPNWeb.TopicSolo do
   end
 
   def handle_info(:after_join, socket) do
-    push(socket, "connect", %{"public_key" => Util.get_public_key()})
+    push(socket, "connect", %{"public_key" => Util.get_public_key(:base64)})
     {:noreply, socket}
   end
 
@@ -42,8 +42,7 @@ defmodule OPNWeb.TopicSolo do
   end
 
   def handle_in(action, payload, socket) do
-    "Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}"
-    |> IO.puts()
+    IO.puts("Topic: #{socket.topic}, no match for action: #{action}, payload: #{inspect(payload)}")
 
     {:noreply, socket}
   end

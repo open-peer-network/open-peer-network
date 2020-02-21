@@ -1,81 +1,96 @@
-import nacl from "tweetnacl";
-import util from "tweetnacl-util";
-import shajs from "sha.js";
-import { syncScrypt } from "scrypt-js";
 import buffer from "scrypt-js/thirdparty/buffer";
-import { bytesToBase64 } from "./encoding";
+import * as sodium from "libsodium-wrappers";
+import { syncScrypt } from "scrypt-js";
+import { toBase64, fromBase64 } from "./encoding";
 
+let SESSION_KEYS;
+sodium.ready.then(() => {
+	SESSION_KEYS = generateKeyPair();
+});
 
-let SESSION_KEYS = generateKeyPair();
-
-// Just a temporary hack while we migrate to a better way.
-export const storeKeys = (keys) => {
-	SESSION_KEYS = keys;
+export const ready = async (callback) => {
+	sodium.ready.then(callback);
 };
+
+export class KeyContainer {
+	constructor() {
+		this.keys = SESSION_KEYS || {};
+	}
+	set(keypair) {
+		this.keys = keypair;
+	}
+	getSecretKey(isBase64) {
+		if (isBase64) return this.keys.privateKey && toBase64(this.keys.privateKey);
+		else return this.keys.privateKey;
+	}
+	getPublicKey(isBase64) {
+		if (isBase64) return this.keys.publicKey && toBase64(this.keys.publicKey);
+		else return this.keys.publicKey;
+	}
+	encrypt(plaintext, publicKey) {
+		const nonce = getNonce();
+		const box = sodium.crypto_box_easy(plaintext, nonce, publicKey, this.keys.privateKey);
+		return toBase64(concatUint8(nonce, box));
+	}
+	encryptPrivate(plaintext) {
+		const nonce = getNonce();
+		const ciphertext = sodium.crypto_secretbox_easy(plaintext, nonce, this.keys.privateKey);
+		const bytes = concatUint8(nonce, ciphertext);
+		const box = toBase64(bytes);
+
+		return box;
+	}
+	decryptPrivate(box) {
+		const boxBytesArray = fromBase64(box);
+		if (boxBytesArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
+			throw new Error("invalid ciphertext, too short");
+		}
+		const nonce = boxBytesArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+		const ciphertext = boxBytesArray.slice(sodium.crypto_secretbox_NONCEBYTES);
+		const plaintext = sodium.crypto_secretbox_open_easy(ciphertext, nonce, this.keys.privateKey);
+
+		return sodium.to_string(plaintext);
+	}
+	decrypt(box, publicKey) {
+		const boxBytesArray = fromBase64(box);
+		if (boxBytesArray.length < sodium.crypto_secretbox_NONCEBYTES + sodium.crypto_secretbox_MACBYTES) {
+			throw new Error("Can't decrypt invalid message, length too short");
+		}
+		const nonce = boxBytesArray.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+		const ciphertext = boxBytesArray.slice(sodium.crypto_secretbox_NONCEBYTES);
+		const plaintext = sodium.crypto_box_open_easy(ciphertext, nonce, publicKey, this.keys.privateKey);
+
+		return sodium.to_string(plaintext);
+	}
+}
+
+export const getNonce = () => sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
 
 export function generateKeyPair() {
-	const { publicKey, secretKey } = nacl.box.keyPair();
-	return {
-		publicKey: util.encodeBase64(publicKey),
-		secretKey: util.encodeBase64(secretKey),
-	};
-};
-
-const getSecretKey = () => {
-	return SESSION_KEYS.secretKey;
-};
-
-export const getPublicKey = () => {
-	return SESSION_KEYS.publicKey;
+	return sodium.crypto_box_keypair();
 };
 
 export const keyFromPassword = (passwordString) => {
 	if (typeof passwordString !== "string") {
 		throw new Error(`keyFromPassword() requires a valid string, received type ${typeof passwordString}`);
 	}
-	const passwd = new buffer.SlowBuffer(passwordString.normalize('NFKC'));
-	const salt = new buffer.SlowBuffer("qwertyuiop".normalize('NFKC'));
-	const secretKey = syncScrypt(passwd, salt, 1024, 8, 1, 32);
+	const passwd = new buffer.SlowBuffer(passwordString.normalize("NFKC"));
+	const salt = new buffer.SlowBuffer("qwertyuiop".normalize("NFKC"));
+	const privateKey = syncScrypt(passwd, salt, 1024, 8, 1, 32);
 
-	const keys = nacl.box.keyPair.fromSecretKey(secretKey);
 	return {
-		secretKey: bytesToBase64(keys.secretKey),
-		publicKey: bytesToBase64(keys.publicKey),
+		privateKey,
+		publicKey: sodium.crypto_kdf_derive_from_key(32, 1, "context", privateKey),
+		keyType: "x25519",
 	};
 };
 
-export const encrypt = (json, publicKey) => {
-	const message = JSON.stringify(json);
-	// NaCl requires this.
-	const nonce = nacl.randomBytes(24);
-
-	// This is where the encryption happens.
-	// Returns Uint8Array.
-	const box = nacl.box(
-		util.decodeUTF8(message),
-		nonce,
-		util.decodeBase64(publicKey),
-		util.decodeBase64(getSecretKey()),
-	);
-
-	return {
-		box: bytesToBase64(box),
-		nonce: bytesToBase64(nonce),
-	};
+export const concatUint8 = (...args) => {
+	const res = new Uint8Array(args.reduce((total, arr) => total + arr.length, 0));
+	let offset = 0;
+	args.forEach((arr) => {
+		res.set(arr, offset);
+		offset += arr.length;
+	});
+	return res;
 };
-
-export const decrypt = (box, nonce, publicKey) => {
-	// Returns Uint8Array.
-	const packet = nacl.box.open(
-		util.decodeBase64(box),
-		util.decodeBase64(nonce),
-		util.decodeBase64(publicKey),
-		util.decodeBase64(getSecretKey()),
-	);
-	// Convert to utf-8 and parse as JSON.
-	return JSON.parse(new TextDecoder().decode(packet));
-};
-
-export const SHA256 = (msg) => (
-	shajs("sha256").update(msg).digest("hex")
-);

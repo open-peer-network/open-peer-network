@@ -1,10 +1,11 @@
 import { Socket, Presence } from "phoenix";
 import SimplePeer from "simple-peer";
 import isFunction from "lodash.isfunction";
-import values from "lodash.values";
-import keys from "lodash.keys";
+import { fromBase64 } from "./encoding";
 import {
-	getPublicKey,
+	ready,
+	generateKeyPair,
+	KeyContainer,
 } from "./crypto";
 import {
 	errOut,
@@ -12,10 +13,6 @@ import {
 	validTopic,
 	officialTopic,
 } from "./helpers";
-import {
-	encrypt,
-	decrypt,
-} from "./crypto";
 
 const { isArray } = Array;
 
@@ -25,10 +22,12 @@ class SocketConnection {
 	socket = null;
 	peerKey = null;
 	listeners = {};
-	topics = {};
+	topics = new Map();
+	channels = {};
 	fetchStack = [];
 	watchStack = [];
 	presence = null;
+	keys = new KeyContainer();
 
 	start(url) {
 		const socket = this.socket = new Socket(url);
@@ -37,7 +36,7 @@ class SocketConnection {
 		const firstResponseHandler = ({ payload }) => {
 			if (payload.public_key) {
 				// Make trusted.
-				this.peerKey = payload.public_key;
+				this.peerKey = fromBase64(payload.public_key);
 
 				console.log("Received public key for peer:", this.peerKey);
 				// Remove this listener.
@@ -51,9 +50,14 @@ class SocketConnection {
 			}
 		};
 		socket.onMessage(firstResponseHandler);
-		socket.onOpen(() => {
-			socket.noneChannel = this._newChannel(officialTopic("none"));
-			socket.soloChannel = this._newChannel(officialTopic({ publicKey: getPublicKey() }));
+		socket.onOpen(() => ready(() => {
+			let pubKey = this.keys.getPublicKey(true);
+			if (!pubKey) {
+				this.keys.set(generateKeyPair());
+				pubKey = this.keys.getPublicKey(true);
+			}
+			socket.noneChannel = this._getChannel(officialTopic("none"));
+			socket.soloChannel = this._getChannel(officialTopic({ publicKey: this.keys.getPublicKey(true) }));
 			socket.soloChannel.on("message", (msg) => {
 				console.log("message", msg);
 			});
@@ -63,14 +67,14 @@ class SocketConnection {
 						message: "webrtc_answer",
 						payload: answer,
 						recipients: [sender],
-						sender: getPublicKey(),
+						sender: this.keys.getPublicKey(true),
 					});
 				});
 			});
 			socket.soloChannel.on("webrtc_answer", ({ payload, sender }) => {
 				this.connectedPeers[sender].signal(payload);
 			})
-		});
+		}));
 		socket.onClose(() => delete this.peerKey);
 		socket.connect();
 	}
@@ -89,12 +93,21 @@ class SocketConnection {
 
 	encrypt(string) {
 		if (!this.peerKey) throw new Error("encrypt() called but peerKey unavailable.");
-		return encrypt(string, this.peerKey);
+		return this.keys.encrypt(string, this.peerKey);
 	}
 
-	decrypt(responce) {
+	decrypt(ciphertext) {
 		if (!this.peerKey) throw new Error("decrypt() called but peerKey unavailable.");
-		return decrypt(responce.box, responce.nonce, this.peerKey);
+		if (ciphertext && ciphertext.length) {
+			try {
+				return this.keys.decrypt(ciphertext, this.peerKey);
+			} catch (err) {
+				console.error("error decrypting response:", ciphertext);
+			}
+		} else {
+			console.error("decrypt received invalid ciphertext:", ciphertext);
+		}
+		return null;
 	}
 
 	fetch(topic, callback) {
@@ -114,11 +127,9 @@ class SocketConnection {
 	_fetch(topic, callback) {
 		errOut(!validTopic(topic), "connection._fetch() received invalid topic");
 		this.useTopic(topic).then((channel) => {
-			const ref = channel.on("fetch response", (data) => {
-				callback(this.decrypt(data));
-				channel.off("fetch response", ref);
+			channel.push("fetch-request").receive("json", (response) => {
+				this._responseDecode(channel, response, callback);
 			});
-			channel.push("fetch");
 		});
 	}
 
@@ -136,58 +147,69 @@ class SocketConnection {
 
 	_watch(topic, callback) {
 		errOut(!validTopic(topic), "connection._watch() received invalid topic");
-		this.useTopic(topic).then((chan) => chan.on("value", callback));
+		this.useTopic(topic).then((channel) => {
+			const ref = channel.on("value", (response) => {
+				this._responseDecode(channel, response, callback);
+			});
+			this.topics.set(ref, channel);
+		});
 		this.listeners[topic.value] = callback;
 	}
 
-	off(sub, predicates) {
+	off(subj, predicates) {
 		errOut(notStrings(predicates), "connection.off() arg 1 type must be either String or Array<String>");
 
-		(isArray(predicates) ? predicates : [predicates]).forEach((pre) => {
-			const topic = officialTopic({ subject: sub, predicate: pre });
-			this.listeners[topic.value].off("value");
+		(isArray(predicates) ? predicates : [predicates]).forEach((pred) => {
+			const topic = officialTopic({ subject: subj, predicate: pred });
 			delete this.listeners[topic.value];
 		});
 	}
 
 	clear() {
-		values(this.listeners).forEach((chan) => {
-			chan.off("value");
-		});
 		this.listeners = {};
+		this.topics.forEach((channel, ref) => channel.off("value", ref));
 	}
 
 	write(topic, value) {
 		errOut(!validTopic(topic), "connection.write() received invalid topic");
 		if (!this.socket || !this.peerKey) {
-			console.log(this.socket);
 			console.error("Connection has closed");
 			return;
 		}
 		this.useTopic(topic).then((chan) => {
-			chan.push("write", this.encrypt(value));
+			chan.push("write", { ct: this.encrypt(value) });
 		});
 	}
 
 	useTopic(topic) {
 		errOut(!validTopic(topic), "connection.useTopic() received invalid topic");
 
-		if (this.topics[topic.value]) {
-			return new Promise((res) => res(this.topics[topic.value]));
-		}
-
-		return new Promise((res, rej) => {
-			this.topics[topic.value] = this._newChannel(topic, res, rej);
+		return new Promise((res) => {
+			if (this.channels[topic.value]) {
+				res(this.channels[topic.value]);
+			} else {
+				this._getChannel(topic, res);
+			}
 		});
 	}
 
-	_newChannel(topic, successHandler, failureHandler) {
+	/**
+	 *
+	 * @param {import('./helpers').officialTopic} topic
+	 * @param {Function} successHandler
+	 * @param {Function} failureHandler
+	 */
+	_getChannel(topic, successHandler, failureHandler) {
 		errOut(!validTopic(topic), "newChannel() received invalid topic");
 		errOut(!["function", "undefined"].includes(typeof successHandler), "newChannel() received invalid success handler");
 		errOut(!["function", "undefined"].includes(typeof failureHandler), "newChannel() received invalid failure handler");
 		errOut(!this.socket, "socket not initialized");
 
-		const public_key = getPublicKey();
+		if (this.channels[topic.value]) {
+			return this.channels[topic.value];
+		}
+
+		const public_key = this.keys.getPublicKey(true);
 
 		let channel;
 		if (/^solo:/.test(topic.value)) {
@@ -198,6 +220,7 @@ class SocketConnection {
 		if (/^sp:/.test(topic.value)) {
 			this.usePresence(channel);
 		}
+		this.channels[topic.value] = channel;
 
 		channel.join()
 			.receive("ok", () => {
@@ -212,14 +235,24 @@ class SocketConnection {
 		return channel;
 	}
 
+	_responseDecode(channel, response, callback) {
+		if (response && response.ct && response.ct.length) {
+			const [, subject, predicate] = channel.topic.match(/^sp:([:\w\W/-]+):([^:]+)$/);
+			const object = this.decrypt(response.ct);
+			callback({ subject, predicate, object, pubkey: response.pubkey });
+		} else {
+			console.error("received invalid payload for 'fetch response':", response);
+		}
+	}
+
 	usePresence(channel) {
 		new Presence(channel);
-		const ourKey = getPublicKey();
+		const ourKey = this.keys.getPublicKey(true);
 
 		channel.on("presence_state", (state) => {
 			const newState = Presence.syncState(this.presenceState, state);
-			const updatedPeers = keys(newState);
-			const knownPeers = keys(this.presenceState);
+			const updatedPeers = Object.keys(newState);
+			const knownPeers = Object.keys(this.presenceState);
 			const newPeers = updatedPeers.filter((peerKey) => {
 				return peerKey !== ourKey && !knownPeers.includes(peerKey);
 			});
@@ -237,7 +270,7 @@ class SocketConnection {
 				message: "webrtc_offer",
 				payload: offer,
 				recipients: [peerKey],
-				sender: getPublicKey(),
+				sender: this.keys.getPublicKey(true),
 			});
 		});
 	}

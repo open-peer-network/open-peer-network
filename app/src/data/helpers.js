@@ -33,7 +33,7 @@ export const validateCredentials = (email, password) => {
 export const validTopic = (topic) => {
     if (!topic || !topic.value) return false;
     if (topic.toString() !== "[object Topic]") return false;
-    return /(^none$|^sp:[^:]+:[^:]+$|^solo:.+$)/.test(topic.value);
+    return /(^none$|^sp:base64:[^:]+:[^:]+$|^sp:[^:]+:[^:]+$|^solo:.+$)/.test(topic.value);
 };
 
 export const err = (str) => {
@@ -57,14 +57,20 @@ export function officialTopic(opts) {
         if (subject && predicate) {
             subj = subject;
             pred = predicate;
+            return;
         }
         if (publicKey) {
             subj = null;
             pred = null;
             pubKey = publicKey;
+            return;
+        }
+        else {
+            console.error("Invalid opts received for officialTopic()", opts);
+            throw new Error("Invalid opts received for officialTopic()");
         }
     };
-    self.set(opts);
+    if (!none) self.set(opts);
 
     Object.defineProperty(self, "value", {
         get: function() {
