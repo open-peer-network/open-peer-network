@@ -239,7 +239,7 @@ class SocketConnection {
 		if (response && response.ct && response.ct.length) {
 			const [, subject, predicate] = channel.topic.match(/^sp:([:\w\W/-]+):([^:]+)$/);
 			const object = this.decrypt(response.ct);
-			callback({ subject, predicate, object });
+			callback({ subject, predicate, object, pubkey: response.pubkey });
 		} else {
 			console.error("received invalid payload for 'fetch response':", response);
 		}

@@ -22,7 +22,8 @@ export class SyncStore extends Store {
                 }, false);
                 watching.add(unwatch);
             });
-            node.fetchAndWatch(props, ({ predicate, object }) => {
+            node.fetchAndWatch(props, ({ predicate, object, pubkey }) => {
+                if (pubkey === connection.keys.getPublicKey(true)) return;
                 if (isPrivate) {
                     let plaintext;
                     try {

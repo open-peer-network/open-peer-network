@@ -87,7 +87,10 @@ defmodule OPNWeb.TopicSP do
           :ok ->
             {:ok, ct} = Util.encrypt(socket, obj_pt)
             :ets.insert(:sp, {socket.assigns.db_topic, obj_pt})
-            endpoint_broadcast!(socket.topic, "value", %{"ct" => Util.safe_encode64(ct)})
+            endpoint_broadcast!(socket.topic, "value", %{
+              "ct" => Util.safe_encode64(ct),
+              "pubkey" => socket.assigns.public_key,
+            })
 
             {:noreply, socket}
 

@@ -15,8 +15,6 @@ import {
 export class PublicNode {
 	subject = false;
 	listeners = [];
-	fetchStack = [];
-	watchStack = [];
 	topicValues = {};
 
 	constructor(subject) {
@@ -25,20 +23,6 @@ export class PublicNode {
 
 	topic(predicate) {
 		return this.subject ? officialTopic({ subject: this.subject, predicate }) : false;
-	}
-
-	_emptyFetchStack() {
-		while (this.fetchStack.length) {
-			const [pred, callback] = this.fetchStack.shift();
-			this._fetch(this.topic(pred), callback);
-		}
-	}
-
-	_emptyWatchStack() {
-		while (this.watchStack.length) {
-			const [pred, callback] = this.watchStack.shift();
-			this._watch(this.topic(pred), callback);
-		}
 	}
 
 	fetch(predicates, callback) {
@@ -69,10 +53,6 @@ export class PublicNode {
 			[].concat(predicates).forEach((pred) => {
 				connection.watch(this.topic(pred), callback);
 			});
-		} else {
-			[].concat(predicates).forEach((pred) => {
-				this.watchStack.push([pred, callback]);
-			});
 		}
 	}
 
@@ -83,11 +63,6 @@ export class PublicNode {
 		if (this.subject) {
 			this.fetch(predicates, callback);
 			this.watch(predicates, callback);
-		} else {
-			[].concat(predicates).forEach((predicate) => {
-				this.fetchStack.push([predicate, callback]);
-				this.watchStack.push([predicate, callback]);
-			});
 		}
 	}
 
@@ -122,7 +97,7 @@ export class PrivateNode extends PublicNode {
 	}
 
 	login(email, password) {
-		if (this.keys.getPublicKey(true) === undefined) throw new Error("user.login() called while already logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.login() called while already logged in");
 		validateCredentials(email, password);
 
 		this.keys.set(keyFromPassword(email + password));
@@ -130,14 +105,14 @@ export class PrivateNode extends PublicNode {
 	}
 
 	logout() {
-		if (this.keys.getPublicKey(true) === undefined) throw new Error("user.logout() called while not logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.logout() called while not logged in");
 
 		this.keys.set({});
 		this.subject = null;
 	}
 
 	register(email, password) {
-		if (this.keys.getPublicKey(true) === undefined) throw new Error("user.register() called while already logged in");
+		if (this.keys.getPublicKey(true) === undefined) err("user.register() called while already logged in");
 		validateCredentials(email, password);
 
 		this.keys.set(keyFromPassword(email + password));
