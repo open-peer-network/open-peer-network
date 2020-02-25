@@ -17,6 +17,21 @@ export const notStrings = (thing, errMessage) => {
     }
 };
 
+export const toStorage = (value) => (
+    `${(typeof value)[0]}:${value}`
+);
+export const fromStorage = (value) => {
+    switch(value.slice(0, 2)) {
+        case "s:":
+            return value.slice(2);
+        case "n:":
+            return Number(value.slice(2));
+        case "b:":
+            return value.slice(2) === "true";
+        default: return;
+    }
+};
+
 export const errOut = (cond, errMessage) => {
     if (cond) throw new Error(errMessage);
 };

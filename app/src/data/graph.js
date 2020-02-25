@@ -93,26 +93,11 @@ export class PrivateNode extends PublicNode {
 	
 	constructor(email, passphrase) {
 		super(undefined);
-		this.login(email, passphrase);
+		this.setSecret(email, passphrase);
 	}
 
-	login(email, password) {
+	setSecret(email, password) {
 		if (this.keys.getPublicKey(true) === undefined) err("user.login() called while already logged in");
-		validateCredentials(email, password);
-
-		this.keys.set(keyFromPassword(email + password));
-		this.subject = this.keys.getPublicKey(true);
-	}
-
-	logout() {
-		if (this.keys.getPublicKey(true) === undefined) err("user.logout() called while not logged in");
-
-		this.keys.set({});
-		this.subject = null;
-	}
-
-	register(email, password) {
-		if (this.keys.getPublicKey(true) === undefined) err("user.register() called while already logged in");
 		validateCredentials(email, password);
 
 		this.keys.set(keyFromPassword(email + password));

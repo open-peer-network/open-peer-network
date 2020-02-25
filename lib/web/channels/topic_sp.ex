@@ -37,12 +37,11 @@ defmodule OPNWeb.TopicSP do
 
   def handle_info(:after_join, socket) do
     users = Util.get_users_on_topic(socket.assigns.db_topic)
-    IO.puts("!!! FOUND USERS ON TOPIC #{socket.assigns.db_topic}: #{inspect(users)}")
 
     push(socket, "connect", %{"public_key" => Util.get_public_key(:base64), "peers" => users})
 
     Presence.track(socket, socket.assigns.public_key, %{})
-    push(socket, "presence_state", Presence.list(socket.topic))
+    push(socket, "presence_state", Presence.list(socket.assigns.public_key) |> IO.inspect(label: "PRESENCE !!!"))
 
     if !Enum.member?(users, socket.assigns.public_key) do
       :ets.insert(:users, {socket.assigns.db_topic, [socket.assigns.public_key | users]})

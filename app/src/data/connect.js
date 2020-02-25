@@ -19,6 +19,7 @@ const { isArray } = Array;
 class SocketConnection {
 	connectedPeers = {};
 	presenceState = {};
+	presence = null;
 	socket = null;
 	peerKey = null;
 	listeners = {};
@@ -26,7 +27,6 @@ class SocketConnection {
 	channels = {};
 	fetchStack = [];
 	watchStack = [];
-	presence = null;
 	keys = new KeyContainer();
 
 	start(url) {
@@ -246,7 +246,7 @@ class SocketConnection {
 	}
 
 	usePresence(channel) {
-		new Presence(channel);
+		this.presence = new Presence(channel);
 		const ourKey = this.keys.getPublicKey(true);
 
 		channel.on("presence_state", (state) => {
