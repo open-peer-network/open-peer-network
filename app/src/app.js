@@ -1,14 +1,15 @@
 import React from "react";
 import "./index.css";
 import { ready } from "./data/crypto";
-import store from "./store";
+import store1 from "./store1";
+import store2 from "./store1";
 import useSharedState from "use-simple-shared-state";
 
 const backend = process.env.REACT_APP_HOST_DOMAIN;
 const password = process.env.REACT_APP_PASSWORD;
 const email = process.env.REACT_APP_USER_EMAIL;
 
-window.store = store;
+window.store = store1;
 
 const {
 	setFirstName,
@@ -16,28 +17,40 @@ const {
 	setEmail,
 	setValue1,
 	setValue2,
-} = store.actions;
+} = store1.actions;
 
 ready(() => {
-	store.setSecret(email, password);
-	store.connection.start(`${backend}/socket`);
+	store1.setSecret(email, password);
+	store1.connection.start(`${backend}/socket`);
 });
 
 const useDefault = () => {
-	store.setSecret(email, password);
+	store1.setSecret(email, password);
 };
 const useUser1 = () => {
-	store.setSecret(email+"1", password+"1");
+	store1.setSecret(email+"1", password+"1");
 };
 const useUser2 = () => {
-	store.setSecret(email+"2", password+"2");
+	store1.setSecret(email+"2", password+"2");
 };
 const useNonUser = () => {
-	store.setSubject("global_id_1");
+	store1.setSubject("global_id_1");
 };
 
+const setData = (evt) => {
+	console.log(evt.target.value);
+	let json;
+	try {
+		json = JSON.parse(evt.target.value.replace(/\s|\n/g, ""));
+	} catch (err) {
+		console.log("invalid JSON");
+	}
+	if (json) store2.dispatch(json);
+	console.log("success");
+}
+
 const App = () => {
-	const [first_name, last_name, email, value1, value2] = useSharedState(store, [
+	const [first_name, last_name, email, value1, value2] = useSharedState(store1, [
 		s => s.first_name,
 		s => s.last_name,
 		s => s.email,
@@ -49,7 +62,7 @@ const App = () => {
 		<div className="App">
 			<div>
 				<label htmlFor="pubkey">Public Key: </label>
-				<input name="pubkey" className="monospace" value={store.getSubject() || ""} readOnly />
+				<input name="pubkey" className="monospace" value={store1.getSubject() || ""} readOnly />
 			</div>
 			<div>
 				<label htmlFor="first_name">First Name: </label>
@@ -79,6 +92,9 @@ const App = () => {
 			<button onClick={useUser1}>User 1</button>
 			<button onClick={useUser2}>User 2</button>
 			<button onClick={useNonUser}>Use Non-User</button>
+			<div>
+				<textarea onChange={setData}></textarea>
+			</div>
 		</div>
 	);
 }

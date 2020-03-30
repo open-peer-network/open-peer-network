@@ -1,4 +1,5 @@
 import isString from "lodash.isstring";
+import { sha256 } from "sha.js";
 
 const { isArray } = Array;
 const STASH = {};
@@ -7,6 +8,7 @@ export const stashPut = (name, thing) => {
     if (!isString(name)) throw new Error("helpers.stash() requires a string for arg 1");
     STASH[name] = thing;
 };
+
 export const stashGet = (name) => {
     return STASH[name];
 };
@@ -17,9 +19,18 @@ export const notStrings = (thing, errMessage) => {
     }
 };
 
+export const hash = (string) => (
+    new sha256().update(string).digest("base64")
+);
+
+export const asGUID = (id) => (
+	/^i:<.+>$/g.test(id) ? id : `i:<${id}>`
+);
+
 export const toStorage = (value) => (
     `${(typeof value)[0]}:${value}`
 );
+
 export const fromStorage = (value) => {
     switch(value.slice(0, 2)) {
         case "s:":

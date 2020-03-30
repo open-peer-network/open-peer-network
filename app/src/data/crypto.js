@@ -13,8 +13,9 @@ export const ready = async (callback) => {
 };
 
 export class KeyContainer {
-	constructor() {
+	constructor(id) {
 		this.keys = SESSION_KEYS || {};
+		if (id) this.set(id);
 	}
 	set(keypair) {
 		this.keys = keypair;

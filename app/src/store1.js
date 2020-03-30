@@ -1,4 +1,4 @@
-import { SyncStore } from "./data/sync-store";
+import { SyncStore } from "./data/db-adapter";
 
 const initialState = {
 	first_name: "",
